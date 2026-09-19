@@ -1,0 +1,431 @@
+﻿# AGRI CRAFT-AI — Product Requirements Document
+
+## 1. Product Overview
+
+### Product Name
+AGRI CRAFT-AI
+
+### Tagline
+"Right Crop. Right Time. Right Action. Right Support."
+
+### Product Type
+AI-powered agricultural assistance platform.
+
+### Target Users
+- Small farmers
+- Marginal farmers
+- Small agricultural producers
+- Farmers looking for crop guidance
+- Farmers seeking financial and government support
+
+---
+
+# 2. Problem Statement
+
+Small and marginal farmers often need information from multiple sources for:
+
+- Crop selection
+- Weather conditions
+- Disease identification
+- Irrigation decisions
+- Agricultural loans
+- Government schemes
+- Market prices
+- Agricultural support services
+
+AGRI CRAFT-AI brings these requirements into a single farmer-friendly platform.
+
+---
+
+# 3. Product Goal
+
+Create a simple AI-powered platform that helps farmers:
+
+1. Select suitable crops.
+2. Identify possible crop diseases.
+3. Understand crop risks.
+4. Receive practical next-step recommendations.
+5. Discover suitable formal loan options.
+6. Compare applicable interest rates.
+7. Find government schemes based on eligibility.
+8. Understand required documents and application steps.
+9. Access official agricultural helplines.
+10. Monitor local market prices and trends.
+
+---
+
+# 4. Core Features
+
+## Feature 1 — AI Crop Recommendation
+
+### Description
+Recommend suitable crops using farmer and environmental information.
+
+### Inputs
+- Location
+- Season
+- Soil type
+- Water availability
+- Irrigation type
+- Farm size
+- Weather
+
+### Output
+- Recommended crops
+- Suitability score
+- Water requirement
+- Growing period
+- Risk level
+- Reason for recommendation
+
+---
+
+# 5. Feature 2 — Crop Disease Detection
+
+### Description
+Allow farmers to upload crop images and receive an AI-based preliminary assessment.
+
+### Inputs
+- Crop image
+- Crop name
+- Optional crop stage
+
+### Output
+- Possible disease/problem
+- Confidence level
+- Risk level
+- Symptoms
+- Recommended next actions
+
+### Requirements
+- Image upload
+- Image preview
+- Loading/analysis state
+- Result screen
+- Upload another image option
+
+---
+
+# 6. Feature 3 — Crop Risk Engine
+
+### Description
+Calculate an overall crop risk based on multiple factors.
+
+### Factors
+
+- Weather
+- Crop stage
+- Soil
+- Water availability
+- Irrigation
+- Disease information
+
+### Risk Levels
+
+LOW
+MODERATE
+HIGH
+
+### Output
+
+- Overall risk
+- Risk factors
+- Explanation
+- Recommended action
+- Preventive measures
+
+---
+
+# 7. Feature 4 — Weather Integration
+
+### Description
+Provide weather information relevant to the farmer's location and crop.
+
+### Display
+
+- Temperature
+- Rainfall
+- Humidity
+- Weather condition
+- Forecast
+- Weather-related crop warning
+
+### Usage
+
+Weather information should influence:
+- Crop recommendations
+- Irrigation recommendations
+- Crop risk
+- Disease risk
+
+---
+
+# 8. Feature 5 — Agricultural Loan Finder
+
+### Description
+Help farmers discover formal agricultural loan options.
+
+### Inputs
+
+- Location
+- Farmer category
+- Farm size
+- Crop/activity
+- Loan purpose
+- Required amount
+
+### Output
+
+Loan cards containing:
+
+- Provider
+- Loan type
+- Applicable interest rate
+- Eligibility
+- Loan purpose
+- Required documents
+- Application method
+- Official source
+
+### Important
+
+Interest rates and loan terms must display their effective date/source because financial information can change.
+
+---
+
+# 9. Feature 6 — Government Scheme Finder
+
+### Description
+
+Match farmers with government agricultural schemes based on available eligibility information.
+
+### Inputs
+
+- Location
+- Farmer category
+- Farm size
+- Crop
+- Agricultural activity
+- Irrigation information
+
+### Output
+
+Each scheme should show:
+
+- Scheme name
+- Purpose
+- Benefits
+- Eligibility
+- Required documents
+- Application procedure
+- Official source
+- Eligibility status
+
+### Eligibility Status
+
+- Likely Eligible
+- May Be Eligible
+- More Information Required
+
+The system should not claim guaranteed eligibility.
+
+---
+
+# 10. Feature 7 — Document Assistant
+
+### Description
+
+Provide a checklist of documents needed for a selected scheme or loan.
+
+### Output
+
+Example:
+
+## Documents Required
+
+- Identity proof
+- Bank account details
+- Land ownership/land-related document
+- Farmer registration details
+- Scheme-specific documents
+
+The exact document list must come from the relevant official source.
+
+---
+
+# 11. Feature 8 — Agricultural Helplines
+
+### Description
+
+Provide official agricultural helpline information.
+
+### Information
+
+- Organization
+- Service
+- Toll-free number
+- Working hours
+- Purpose
+- Official source
+
+### Action
+
+"Call Now"
+
+The application should use clickable phone links on supported devices.
+
+---
+
+# 12. Feature 9 — Market Prices
+
+### Description
+
+Provide farmers with local market price information.
+
+### Inputs
+
+- Crop
+- Location
+- Market
+
+### Output
+
+- Current price
+- Previous price
+- Market
+- Unit
+- Date
+- Price trend
+
+### UI
+
+Use:
+- Price cards
+- Comparison table
+- Trend chart
+
+Market data must display its source and timestamp/date.
+
+---
+
+# 13. Feature 10 — Farmer Dashboard
+
+## Dashboard Layout
+
+### Header
+- AGRI CRAFT-AI logo
+- Farmer profile
+- Notifications
+- Language selector
+
+### Main Dashboard
+
+#### Weather
+Current weather and crop-related warning.
+
+#### Crop
+Current crop and growth stage.
+
+#### Risk
+Current crop risk level.
+
+#### AI Action
+Most important recommended next step.
+
+#### Finance
+Loan and government scheme recommendations.
+
+#### Market
+Latest available crop prices.
+
+#### Help
+Agricultural helpline access.
+
+---
+
+# 14. Navigation
+
+The main navigation should contain:
+
+- Dashboard
+- Crop Advisor
+- Disease Detection
+- Crop Risk
+- Weather
+- Loans
+- Government Schemes
+- Market Prices
+- Helplines
+- Profile
+
+---
+
+# 15. User Experience Requirements
+
+The website must be:
+
+- Simple
+- Farmer-friendly
+- Mobile responsive
+- Fast
+- Accessible
+- Easy to understand
+- Low cognitive load
+
+Avoid unnecessary technical terminology.
+
+Use icons and visual cards wherever appropriate.
+
+---
+
+# 16. Language Support
+
+The architecture should support multiple Indian languages.
+
+Initial interface:
+
+- English
+- Tamil
+
+The system should be designed so additional languages can be added later.
+
+---
+
+# 17. AI Assistant
+
+Include an optional AI assistant for farmer questions.
+
+The assistant should:
+
+- Use simple language.
+- Explain recommendations.
+- Ask for missing information.
+- Provide step-by-step guidance.
+- Avoid presenting uncertain information as fact.
+- Direct users to official sources for government schemes, loans, and helplines.
+
+Example:
+
+Farmer:
+"What crop should I plant?"
+
+Assistant:
+"Tell me your soil type, available water, location, and current season. I can then suggest suitable options."
+
+---
+
+# 18. Data Model
+
+## Farmer
+
+```text
+farmer_id
+name
+location
+district
+state
+farm_size
+soil_type
+water_availability
+irrigation_type
+farmer_category

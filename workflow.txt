@@ -1,0 +1,474 @@
+# AGRI CRAFT-AI — Website Workflow
+
+## 1. User Entry
+
+User opens the AGRI CRAFT-AI website.
+
+### Landing Page
+- Display platform name: AGRI CRAFT-AI
+- Display tagline:
+  "Right Crop. Right Time. Right Action. Right Support."
+- Briefly explain how AI helps farmers.
+- Provide:
+  - Get Started
+  - Explore Features
+  - Farmer Login / Continue as Guest
+
+---
+
+# 2. Farmer Profile Setup
+
+The farmer enters basic information.
+
+### Required Information
+- Name
+- Location / District
+- Farm size
+- Soil type
+- Available water source
+- Irrigation type
+- Current crop (optional)
+- Farming experience (optional)
+
+### System Action
+Store farmer information and use it as the base context for recommendations.
+
+---
+
+# 3. AI Crop Recommendation Workflow
+
+## Input
+The farmer provides:
+- Location
+- Season
+- Soil type
+- Water availability
+- Irrigation type
+- Farm size
+
+## AI Processing
+The system analyzes:
+- Suitable crops
+- Current season
+- Soil compatibility
+- Water requirements
+- Weather conditions
+- Expected risks
+
+## Output
+
+Display recommended crops as cards.
+
+Each crop card contains:
+- Crop name
+- Suitability percentage
+- Water requirement
+- Growing period
+- Expected risk
+- Basic cultivation information
+- Why this crop is recommended
+
+### Action
+Farmer can select:
+"View Crop Plan"
+
+---
+
+# 4. Weather & Crop Stage Workflow
+
+The farmer selects or confirms the current crop.
+
+The system collects:
+- Current weather
+- Temperature
+- Rainfall
+- Humidity
+- Crop growth stage
+- Irrigation status
+
+## AI Analysis
+
+Combine:
+Weather + Crop Stage + Irrigation + Soil + Disease Risk
+
+## Output
+
+Display:
+- Current crop condition
+- Weather impact
+- Irrigation recommendation
+- Risk level
+- Immediate action
+- Upcoming risk
+
+---
+
+# 5. Crop Disease Detection Workflow
+
+## Upload
+
+Farmer uploads a crop/leaf image.
+
+Supported:
+- JPG
+- JPEG
+- PNG
+
+## AI Processing
+
+System analyzes the image and identifies possible:
+- Diseases
+- Pest damage
+- Nutrient deficiency
+- Healthy crop condition
+- Unknown/uncertain condition
+
+## Result
+
+Display:
+- Possible issue
+- Confidence level
+- Risk level
+- Visible symptoms
+- Recommended next steps
+
+### Important
+The system should clearly state that AI identification is a preliminary assessment and farmers should consult an agricultural expert when the result is uncertain or severe.
+
+### Actions
+- Upload Another Image
+- View Treatment Guidance
+- Check Agricultural Helpline
+
+---
+
+# 6. Crop Risk Classification Workflow
+
+The system combines:
+
+Crop Stage
++
+Weather
++
+Soil
++
+Water
++
+Irrigation
++
+Disease Detection
+
+## Risk Engine
+
+Classify the crop into:
+
+- LOW RISK
+- MODERATE RISK
+- HIGH RISK
+
+## Output
+
+Show:
+- Overall Risk
+- Main Risk Factors
+- Recommended Action
+- Urgency
+- Preventive Steps
+
+---
+
+# 7. Loan Discovery Workflow
+
+Farmer opens:
+
+"Loans & Finance"
+
+## Input
+
+- Farm location
+- Farmer category
+- Farm size
+- Crop/activity
+- Required loan amount
+- Purpose of loan
+
+## System Processing
+
+Find suitable formal agricultural loan options.
+
+Compare:
+- Loan provider
+- Loan type
+- Applicable interest rate
+- Loan purpose
+- Eligibility
+- Required documents
+- Application method
+
+## Output
+
+Display loan options in comparison cards/table.
+
+### Action
+"Check Eligibility"
+
+---
+
+# 8. Government Scheme Recommendation Workflow
+
+Farmer opens:
+
+"Government Schemes"
+
+## Input
+
+Use existing farmer profile:
+- Location
+- Farm size
+- Farmer category
+- Crop
+- Irrigation
+- Farming activity
+
+## AI Matching
+
+Match farmer profile against available government agricultural schemes.
+
+## Output
+
+Display:
+
+### Scheme Card
+- Scheme name
+- Purpose
+- Eligibility
+- Benefits
+- Required documents
+- Application process
+- Official source
+- Eligibility status
+
+Possible status:
+- Likely Eligible
+- May Be Eligible
+- More Information Required
+
+### Action
+"View Application Guidance"
+
+---
+
+# 9. Document Guidance Workflow
+
+For each selected scheme:
+
+Display:
+
+## Required Documents
+- Identity proof
+- Land documents
+- Bank details
+- Farmer registration
+- Other scheme-specific documents
+
+## Application Steps
+
+1. Check eligibility
+2. Prepare documents
+3. Open official application portal
+4. Complete application
+5. Submit documents
+6. Track application
+
+Only official government links should be used for applications.
+
+---
+
+# 10. Agricultural Helpline Workflow
+
+Farmer opens:
+
+"Help & Helplines"
+
+Display relevant official agricultural support numbers.
+
+Each helpline card contains:
+- Department / Service
+- Purpose
+- Toll-free number
+- Working hours, when available
+- Description
+
+### Action
+"Call Now"
+
+On mobile devices, the phone number should be clickable.
+
+---
+
+# 11. Market Price Workflow
+
+Farmer opens:
+
+"Market Prices"
+
+## Input
+
+- Crop
+- Location
+- Nearby market / mandi
+
+## System Processing
+
+Retrieve available market-price information.
+
+## Output
+
+Display:
+- Crop
+- Market
+- Current price
+- Previous price
+- Price trend
+- Date/time of data
+- Unit
+
+## Visualization
+
+Use a simple price trend chart.
+
+### Action
+"Compare Markets"
+
+Allow farmer to compare available markets based on price information.
+
+---
+
+# 12. Farmer Dashboard Workflow
+
+After login/profile setup, display a personalized dashboard.
+
+## Dashboard Sections
+
+### Overview
+- Current crop
+- Crop stage
+- Current risk
+- Weather
+- Irrigation status
+
+### AI Recommendations
+- Crop recommendations
+- Disease alerts
+- Risk alerts
+- Next actions
+
+### Finance
+- Suitable loans
+- Government schemes
+- Eligibility
+
+### Market
+- Current crop price
+- Market trends
+- Nearby markets
+
+### Support
+- Agricultural helplines
+- Expert assistance
+
+---
+
+# 13. AI Recommendation Engine
+
+The core AI workflow is:
+
+Farmer Data
+↓
+Soil Data
+↓
+Weather Data
+↓
+Water Availability
+↓
+Crop Stage
+↓
+Disease/Image Analysis
+↓
+Risk Analysis
+↓
+Financial Eligibility
+↓
+Government Scheme Matching
+↓
+Market Information
+↓
+Personalized Recommendation
+
+---
+
+# 14. Main User Journey
+
+Landing Page
+↓
+Farmer Profile
+↓
+Dashboard
+↓
+Choose Requirement
+
+├── Crop Recommendation
+│   ↓
+│   AI Crop Analysis
+│   ↓
+│   Recommended Crops
+│
+├── Disease Detection
+│   ↓
+│   Upload Image
+│   ↓
+│   AI Analysis
+│   ↓
+│   Risk + Next Action
+│
+├── Loans
+│   ↓
+│   Eligibility
+│   ↓
+│   Loan Comparison
+│
+├── Government Schemes
+│   ↓
+│   Eligibility Matching
+│   ↓
+│   Scheme Recommendations
+│
+├── Market Prices
+│   ↓
+│   Crop + Market Selection
+│   ↓
+│   Price & Trend
+│
+└── Help
+    ↓
+    Agricultural Helplines
+
+---
+
+# 15. Final Recommendation Workflow
+
+All modules should eventually connect to a simple:
+
+## "What Should I Do Now?"
+
+The system summarizes the most relevant actions for the farmer.
+
+Example:
+
+1. Irrigate the crop based on current conditions.
+2. Monitor the detected disease symptoms.
+3. Check the recommended government scheme.
+4. Compare available formal loan options.
+5. Monitor current market prices before selling.
+
+The interface should prioritize actionable recommendations rather than displaying excessive technical information.

@@ -1,0 +1,19 @@
+{
+  "name": "agri-craft-ai",
+  "version": "1.0.0",
+  "description": "AGRI CRAFT-AI — Right Crop. Right Time. Right Action. Right Support.",
+  "main": "index.html",
+  "scripts": {
+    "start": "start index.html"
+  },
+  "keywords": [
+    "agriculture",
+    "ai",
+    "crop-recommendation",
+    "disease-detection",
+    "kcc-loans",
+    "mandi-rates"
+  ],
+  "author": "AGRI CRAFT-AI Team",
+  "license": "MIT"
+}

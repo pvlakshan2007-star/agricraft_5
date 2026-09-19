@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGRI CRAFT-AI — Right Crop. Right Time. Right Action. Right Support.</title>
+  <meta name="description" content="AI-powered agricultural assistance platform for small and marginal farmers. Crop recommendation, leaf disease detection, crop risk rating, 4% KCC loans, government subsidies, and live mandi market prices.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Site Header & Sticky Navigation -->
+  <header class="site-header">
+    <div class="header-container">
+      <!-- Brand Logo & Tagline -->
+      <div class="brand" onclick="switchView('dashboard')">
+        <div class="brand-icon">🌾</div>
+        <div class="brand-title-wrap">
+          <h1>
+            AGRI CRAFT <span class="badge-ai">AI</span>
+          </h1>
+          <div class="brand-tagline" data-i18n="tagline">Right Crop. Right Time. Right Action. Right Support.</div>
+        </div>
+      </div>
+
+      <!-- Main Navigation Menu -->
+      <nav class="main-nav" aria-label="Main Navigation">
+        <button class="nav-btn active" data-view="dashboard">
+          <span>🏠</span> <span data-i18n="navDashboard">Dashboard</span>
+        </button>
+        <button class="nav-btn" data-view="crop_advisor">
+          <span>🌱</span> <span data-i18n="navCropAdvisor">Crop Advisor</span>
+        </button>
+        <button class="nav-btn" data-view="disease_detection">
+          <span>📸</span> <span data-i18n="navDiseaseDetection">Disease Detection</span>
+        </button>
+        <button class="nav-btn" data-view="crop_risk">
+          <span>🛡️</span> <span data-i18n="navCropRisk">Crop Risk</span>
+        </button>
+        <button class="nav-btn" data-view="weather">
+          <span>🌤️</span> <span data-i18n="navWeather">Weather</span>
+        </button>
+        <button class="nav-btn" data-view="loans">
+          <span>💰</span> <span data-i18n="navLoans">Agri Loans</span>
+        </button>
+        <button class="nav-btn" data-view="schemes">
+          <span>🏛️</span> <span data-i18n="navSchemes">Govt Schemes</span>
+        </button>
+        <button class="nav-btn" data-view="markets">
+          <span>📊</span> <span data-i18n="navMarkets">Market Prices</span>
+        </button>
+        <button class="nav-btn" data-view="helplines">
+          <span>📞</span> <span data-i18n="navHelplines">Helplines</span>
+        </button>
+      </nav>
+
+      <!-- Action Controls: Language Toggle & Profile Pill -->
+      <div class="header-actions">
+        <button class="lang-toggle" id="btnLangToggle" title="Switch Language (English / தமிழ்)">
+          🌐 தமிழ்
+        </button>
+        <div class="profile-chip" onclick="switchView('profile')" style="cursor: pointer;" title="Farmer Profile Settings">
+          <div class="avatar">👨‍🌾</div>
+          <span id="userChipName">Murugan K</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main View Container -->
+  <main class="app-main">
+    <!-- View 1: Unified Farmer Dashboard -->
+    <section id="view-dashboard" class="view-section active"></section>
+
+    <!-- View 2: AI Crop Recommendation Engine -->
+    <section id="view-crop_advisor" class="view-section"></section>
+
+    <!-- View 3: Computer Vision Disease Scanner -->
+    <section id="view-disease_detection" class="view-section"></section>
+
+    <!-- View 4: Multi-Factor Crop Risk Engine -->
+    <section id="view-crop_risk" class="view-section"></section>
+
+    <!-- View 5: Agro-Meteorological Weather Advisory -->
+    <section id="view-weather" class="view-section"></section>
+
+    <!-- View 6: Agricultural Loan Discovery & Comparison -->
+    <section id="view-loans" class="view-section"></section>
+
+    <!-- View 7: Government Schemes & Eligibility Matcher -->
+    <section id="view-schemes" class="view-section"></section>
+
+    <!-- View 8: Mandi Market Live Prices & Trends -->
+    <section id="view-markets" class="view-section"></section>
+
+    <!-- View 9: Agricultural Helplines Directory -->
+    <section id="view-helplines" class="view-section"></section>
+
+    <!-- View 10: Farmer Profile Setup & Switching -->
+    <section id="view-profile" class="view-section"></section>
+  </main>
+
+  <!-- Reusable Modal (Crop Plan & Document Checklist) -->
+  <div id="appModal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-window">
+      <button class="modal-close-btn" onclick="closeAppModal()" aria-label="Close Modal">✕</button>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <!-- Floating AgriBot AI Chat Assistant -->
+  <button id="agribotTrigger" class="agribot-trigger" title="Ask AgriBot AI Assistant" aria-label="Ask AgriBot AI Assistant">
+    🤖
+  </button>
+
+  <aside id="agribotDrawer" class="agribot-drawer" aria-label="AgriBot Chat Assistant">
+    <div class="drawer-header">
+      <h4>🤖 <span data-i18n="aiChatTitle">AgriBot - AI Farm Assistant</span></h4>
+      <button id="agribotClose" class="drawer-close" aria-label="Close Assistant">✕</button>
+    </div>
+    <div id="agribotBody" class="drawer-body"></div>
+    <div class="quick-chips-container">
+      <button class="chat-chip" onclick="sendAgriBotChip('What crop to plant in Kharif with canal water?')">🌾 Best Crop</button>
+      <button class="chat-chip" onclick="sendAgriBotChip('How to cure rice leaf blast organically?')">🌿 Rice Blast Cure</button>
+      <button class="chat-chip" onclick="sendAgriBotChip('How to apply for KCC loan at 4% interest?')">💰 4% KCC Loan</button>
+      <button class="chat-chip" onclick="sendAgriBotChip('Today mandi price for turmeric?')">📈 Turmeric Price</button>
+      <button class="chat-chip" onclick="sendAgriBotChip('What are PM-KISAN documents?')">🏛️ PM-KISAN</button>
+    </div>
+    <div class="drawer-input-row">
+      <input type="text" id="agribotInput" placeholder="Ask AgriBot about crops, diseases, loans..." data-i18n-placeholder="aiChatPlaceholder">
+      <button id="agribotSend" data-i18n="send">Send</button>
+    </div>
+  </aside>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div>
+        <div style="font-weight: 700; color: #fff; font-size: 1.1rem; margin-bottom: 0.25rem;">
+          🌾 AGRI CRAFT-AI
+        </div>
+        <p style="color: #64748b; max-width: 500px;">
+          Empowering small and marginal agricultural producers with actionable AI agronomy, early plant pathology, 4% KCC credit matching, and direct government scheme access.
+        </p>
+      </div>
+      <div>
+        <div style="font-weight: 700; color: #fff; margin-bottom: 0.5rem;">Official Farmer Helplines</div>
+        <div>📞 Kisan Call Center: <strong>1800-180-1551</strong> (24x7 Toll-Free)</div>
+        <div>🛡️ Crop Insurance (PMFBY): <strong>14447</strong></div>
+        <div>🌾 Tamil Nadu Uzhavan Sevai: <strong>1800-425-4444</strong></div>
+      </div>
+      <div style="width: 100%; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem; margin-top: 0.5rem; text-align: center; color: #64748b; font-size: 0.8rem;">
+        AGRI CRAFT-AI Platform © 2026. Designed for Farmer Empowerment. All financial and government scheme data synced with official sources.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
