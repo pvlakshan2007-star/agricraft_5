@@ -1022,60 +1022,640 @@ function recalculateRisk() {
   `;
 }
 
+// Loan Matching System State
+let loanProfileState = {
+  cibilScore: 720,
+  creditStatus: 'good',
+  existingLoansCount: 0,
+  outstandingAmount: 0,
+  monthlyObligations: 1000,
+  repaymentStatus: 'always_on_time',
+  agriIncome: 280000,
+  otherIncomeMonthly: 5000,
+  requestedAmount: 150000,
+  loanPurpose: 'crop_cultivation',
+  landTenure: 'owner',
+  landArea: 2.5,
+  crop: 'Paddy',
+  croppingPattern: 'double',
+  irrigation: 'canal',
+  state: 'Tamil Nadu',
+  district: 'thanjavur',
+  farmerCategory: 'Small'
+};
+let activeLoanMatchResult = null;
+let isWhyScoreOpen = false;
+let activeSampleCaseKey = '';
+
 /**
- * 5. RENDER LOANS
+ * 5. RENDER LOANS (Transparent Farmer Loan Matching System)
  */
 function renderLoans() {
   const container = document.getElementById('view-loans');
   if (!container) return;
 
   const isTa = currentLang === 'ta';
-  const loans = AgriEngine.matchLoans(currentProfile, { requiredAmount: 150000 });
+  const service = window.LoanRecommendationService;
+
+  if (!service) {
+    container.innerHTML = `<div style="padding: 2rem; text-align: center;">Loan matching service loading...</div>`;
+    return;
+  }
+
+  // Calculate default match if not yet computed
+  if (!activeLoanMatchResult) {
+    activeLoanMatchResult = service.calculateLoanMatchScore(loanProfileState);
+  }
+
+  const sampleProfiles = service.getSampleProfiles();
+  const matchResult = activeLoanMatchResult;
+  const recommendations = matchResult.isValid 
+    ? service.getLoanRecommendations(loanProfileState, matchResult)
+    : [];
 
   container.innerHTML = `
-    <div style="margin-bottom: 1.5rem;">
-      <h2>💰 ${isTa ? 'விவசாய கடன்கள் & நிதி தீர்வுகள்' : 'Agricultural Loan Discovery & Comparison'}</h2>
-      <p style="color: var(--text-muted);">${isTa ? 'குறைந்த வட்டி விகிதத்தில் கிசான் கிரெடிட் கார்டு (KCC) மற்றும் தேசியமயமாக்கப்பட்ட வங்கி கடன்களை ஒப்பிடுங்கள்.' : 'Compare verified formal crop loans, gold loans, and machinery finance with transparent effective interest rates and official portals.'}</p>
-    </div>
+    <div class="loan-system-wrapper">
+      <!-- Section Header -->
+      <div>
+        <h2>💰 ${isTa ? 'வேளாண் கடன் உதவி & பொருத்தம் கணிப்பான்' : 'FARMER LOAN ASSISTANT & MATCHING SYSTEM'}</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
+          ${isTa 
+            ? 'உங்கள் தகுதிக்கு ஏற்ப வெளிப்படையான கடன் பொருத்த மதிப்பெண் (0-100) மற்றும் அரசு திட்டங்களை கண்டறியுங்கள்.' 
+            : 'Transparent weighted matching model (0–100) connecting farmers to verified formal agricultural credit without automated loan guarantees.'}
+        </p>
+      </div>
 
-    <div class="card-deck">
-      ${loans.map(loan => `
-        <div class="info-card">
-          <div>
-            <div class="info-card-header">
-              <div>
-                <h4>${isTa ? loan.name_ta : loan.name}</h4>
-                <div style="font-size: 0.8rem; color: var(--text-muted);">${isTa ? loan.provider_ta : loan.provider}</div>
-              </div>
-              <span class="info-tag">${loan.relevance}</span>
-            </div>
-
-            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-md); padding: 0.85rem; margin-bottom: 1rem;">
-              <div style="font-size: 1.25rem; font-weight: 800; color: #166534;">${loan.interestRate}</div>
-              <div style="font-size: 0.75rem; color: #15803d;">${loan.effectiveDate}</div>
-            </div>
-
-            <ul class="info-details-list">
-              <li><strong>${isTa ? 'கடன் வரம்பு' : 'Max Limit'}:</strong> ${loan.maxAmount}</li>
-              <li><strong>${isTa ? 'நோக்கம்' : 'Purpose'}:</strong> ${loan.purpose}</li>
-              <li><strong>${isTa ? 'தகுதி' : 'Eligibility'}:</strong> ${loan.eligibility}</li>
-              <li><strong>${isTa ? 'கணிப்பு' : 'Repayment'}:</strong> ${loan.emiEstimate}</li>
-            </ul>
-          </div>
-
-          <div class="card-actions">
-            <button class="btn-primary" style="flex: 1; font-size: 0.85rem;" onclick="openDocModal('${loan.id}')">
-              📋 ${t('docsRequired')}
-            </button>
-            <a href="${loan.officialUrl}" target="_blank" rel="noopener" class="btn-secondary" style="font-size: 0.85rem; text-align: center;">
-              🔗 ${isTa ? 'அதிகாரப்பூர்வ தளம்' : 'Official Portal'}
-            </a>
-          </div>
+      <!-- Quick Test Scenario Presets -->
+      <div class="loan-presets-bar">
+        <div style="font-size: 0.85rem; font-weight: 700; color: var(--primary-900); text-transform: uppercase;">
+          🧪 ${isTa ? 'மாதிரி சுயவிவரங்கள் (விரைவு சோதனை):' : 'Sample Test Profiles (Instant Verification):'}
         </div>
-      `).join('')}
+        <div class="preset-pills-row">
+          <button class="sample-preset-btn ${activeSampleCaseKey === 'strong' ? 'active' : ''}" 
+                  onclick="applySampleLoanProfile('strong')">
+            🌟 1. Strong Credit (Good Income)
+          </button>
+          <button class="sample-preset-btn ${activeSampleCaseKey === 'average_with_loans' ? 'active' : ''}" 
+                  onclick="applySampleLoanProfile('average_with_loans')">
+            ⚖️ 2. Average Credit + Loans
+          </button>
+          <button class="sample-preset-btn ${activeSampleCaseKey === 'limited_credit' ? 'active' : ''}" 
+                  onclick="applySampleLoanProfile('limited_credit')">
+            🌱 3. Limited Credit History
+          </button>
+          <button class="sample-preset-btn ${activeSampleCaseKey === 'low_capacity' ? 'active' : ''}" 
+                  onclick="applySampleLoanProfile('low_capacity')">
+            ⚠️ 4. Low Repayment Capacity
+          </button>
+          <button class="sample-preset-btn ${activeSampleCaseKey === 'tenant_farmer' ? 'active' : ''}" 
+                  onclick="applySampleLoanProfile('tenant_farmer')">
+            🌾 6. Tenant Farmer
+          </button>
+          <button class="sample-preset-btn ${activeSampleCaseKey === 'missing_info' ? 'active' : ''}" 
+                  onclick="applySampleLoanProfile('missing_info')">
+            ❓ 7. Missing Information
+          </button>
+        </div>
+      </div>
+
+      <!-- Step-by-Step Farmer Loan Profile Form -->
+      <div class="loan-form-card">
+        <h3 style="font-size: 1.3rem; margin-bottom: 1.5rem; color: var(--primary-900);">
+          📝 ${isTa ? 'விவசாயி கடன் சுயவிவர படிவம்' : 'FARMER LOAN PROFILE ASSESSMENT'}
+        </h3>
+
+        <form id="loanProfileForm" onsubmit="event.preventDefault(); submitLoanAssistantForm();">
+          <!-- Step 1: Credit History (Weight: 30%) -->
+          <div class="loan-step-section">
+            <div class="step-section-header">
+              <span class="step-badge">1</span>
+              <div>
+                <h3>${isTa ? 'கடன் வரலாறு (Credit History)' : 'Step 1: Credit History'}</h3>
+                <span style="font-size: 0.8rem; color: var(--primary-700); font-weight: 700;">★ Weight: 30%</span>
+              </div>
+            </div>
+
+            <div class="loan-inputs-grid">
+              <div class="loan-field">
+                <label for="fldCibil">
+                  <span>${isTa ? 'சிபில் / கடன் மதிப்பெண்' : 'CIBIL / Credit Score'}</span>
+                  <span class="sub-tag">${isTa ? 'சுயமாக பதிவு செய்யும் முறை' : 'Self-reported credit score'}</span>
+                </label>
+                <input type="number" id="fldCibil" min="300" max="900" 
+                       placeholder="e.g. 720 (300-900)" 
+                       value="${loanProfileState.cibilScore || ''}" 
+                       oninput="loanProfileState.cibilScore = this.value">
+                <small style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">
+                  ℹ️ ${isTa ? 'அங்கீகரிக்கப்பட்ட ஒருங்கிணைப்பு இல்லாததால் சுய-மதிப்பீடு பயன்படுத்தப்படுகிறது.' : 'Official credit bureau integration pending; prototype uses self-reported score.'}
+                </small>
+              </div>
+
+              <div class="loan-field">
+                <label for="fldCreditStatus">${isTa ? 'கடன் வரலாற்று நிலை' : 'Credit History Status'}</label>
+                <select id="fldCreditStatus" onchange="loanProfileState.creditStatus = this.value">
+                  <option value="good" ${loanProfileState.creditStatus === 'good' ? 'selected' : ''}>Good (750+ / Clean repayment track record)</option>
+                  <option value="fair" ${loanProfileState.creditStatus === 'fair' ? 'selected' : ''}>Fair (650–749 / Minor delays in past)</option>
+                  <option value="limited" ${loanProfileState.creditStatus === 'limited' ? 'selected' : ''}>Limited / No prior credit history</option>
+                  <option value="poor" ${loanProfileState.creditStatus === 'poor' ? 'selected' : ''}>Poor (&lt;600 / Default history)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: Existing Loans (Weight: 25%) -->
+          <div class="loan-step-section">
+            <div class="step-section-header">
+              <span class="step-badge">2</span>
+              <div>
+                <h3>${isTa ? 'தற்போதைய கடன்கள் & திருப்பி செலுத்தும் முறை' : 'Step 2: Existing Loans & Repayment Status'}</h3>
+                <span style="font-size: 0.8rem; color: var(--primary-700); font-weight: 700;">★ Weight: 25%</span>
+              </div>
+            </div>
+
+            <div class="loan-inputs-grid">
+              <div class="loan-field">
+                <label for="fldLoanCount">${isTa ? 'தற்போதுள்ள கடன்களின் எண்ணிக்கை' : 'Number of Existing Loans'}</label>
+                <input type="number" id="fldLoanCount" min="0" max="10" 
+                       value="${loanProfileState.existingLoansCount}" 
+                       oninput="loanProfileState.existingLoansCount = Number(this.value)">
+              </div>
+
+              <div class="loan-field">
+                <label for="fldOutstanding">${isTa ? 'பாக்கி உள்ள தொகை (₹)' : 'Current Outstanding Amount (₹)'}</label>
+                <input type="number" id="fldOutstanding" min="0" step="5000" 
+                       value="${loanProfileState.outstandingAmount}" 
+                       oninput="loanProfileState.outstandingAmount = Number(this.value)">
+              </div>
+
+              <div class="loan-field">
+                <label for="fldRepaymentStatus">${isTa ? 'திருப்பி செலுத்தும் ஒழுக்கம்' : 'Repayment Status'}</label>
+                <select id="fldRepaymentStatus" onchange="loanProfileState.repaymentStatus = this.value">
+                  <option value="always_on_time" ${loanProfileState.repaymentStatus === 'always_on_time' ? 'selected' : ''}>Always on time (Never missed EMI / due date)</option>
+                  <option value="mostly_on_time" ${loanProfileState.repaymentStatus === 'mostly_on_time' ? 'selected' : ''}>Mostly on time (1-2 minor grace delays)</option>
+                  <option value="some_delays" ${loanProfileState.repaymentStatus === 'some_delays' ? 'selected' : ''}>Some delayed payments (Seasonal crop cash gaps)</option>
+                  <option value="frequently_delayed" ${loanProfileState.repaymentStatus === 'frequently_delayed' ? 'selected' : ''}>Frequently delayed / Overdue notices</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Income & Repayment Capacity (Weight: 20%) -->
+          <div class="loan-step-section">
+            <div class="step-section-header">
+              <span class="step-badge">3</span>
+              <div>
+                <h3>${isTa ? 'வருமானம் & திருப்பி செலுத்தும் திறன்' : 'Step 3: Income / Repayment Capacity'}</h3>
+                <span style="font-size: 0.8rem; color: var(--primary-700); font-weight: 700;">★ Weight: 20%</span>
+              </div>
+            </div>
+
+            <div class="loan-inputs-grid">
+              <div class="loan-field">
+                <label for="fldAgriIncome">${isTa ? 'வருடாந்திர விவசாய வருமானம் (₹)' : 'Annual Agricultural Income (₹)'}</label>
+                <input type="number" id="fldAgriIncome" min="10000" step="10000" 
+                       value="${loanProfileState.agriIncome}" 
+                       oninput="loanProfileState.agriIncome = Number(this.value)">
+              </div>
+
+              <div class="loan-field">
+                <label for="fldOtherIncome">${isTa ? 'மற்ற மாத வருமானம் (₹)' : 'Other Monthly Income (₹)'}</label>
+                <input type="number" id="fldOtherIncome" min="0" step="1000" 
+                       value="${loanProfileState.otherIncomeMonthly}" 
+                       oninput="loanProfileState.otherIncomeMonthly = Number(this.value)">
+              </div>
+
+              <div class="loan-field">
+                <label for="fldObligations">${isTa ? 'தற்போதைய மாத தவணை / EMI (₹)' : 'Existing Monthly Obligations / EMI (₹)'}</label>
+                <input type="number" id="fldObligations" min="0" step="500" 
+                       value="${loanProfileState.monthlyObligations}" 
+                       oninput="loanProfileState.monthlyObligations = Number(this.value)">
+              </div>
+
+              <div class="loan-field">
+                <label for="fldReqAmount">${isTa ? 'தேவைப்படும் கடன் தொகை (₹)' : 'Requested Loan Amount (₹)'}</label>
+                <input type="number" id="fldReqAmount" min="10000" step="10000" 
+                       value="${loanProfileState.requestedAmount}" 
+                       oninput="loanProfileState.requestedAmount = Number(this.value)">
+              </div>
+
+              <div class="loan-field">
+                <label for="fldPurpose">${isTa ? 'கடன் நோக்கம்' : 'Loan Purpose'}</label>
+                <select id="fldPurpose" onchange="loanProfileState.loanPurpose = this.value">
+                  <option value="crop_cultivation" ${loanProfileState.loanPurpose === 'crop_cultivation' ? 'selected' : ''}>Crop Cultivation / Seasonal Production (KCC)</option>
+                  <option value="emergency_inputs" ${loanProfileState.loanPurpose === 'emergency_inputs' ? 'selected' : ''}>Immediate Farm Inputs / Seeds & Fertilizer (Gold Loan)</option>
+                  <option value="machinery" ${loanProfileState.loanPurpose === 'machinery' ? 'selected' : ''}>Farm Mechanization / Tractor / Drone Sprayer</option>
+                  <option value="dairy_allied" ${loanProfileState.loanPurpose === 'dairy_allied' ? 'selected' : ''}>Dairy / Livestock / Poultry / Micro-enterprise (MUDRA)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4: Land & Crop Details (Weight: 15%) -->
+          <div class="loan-step-section">
+            <div class="step-section-header">
+              <span class="step-badge">4</span>
+              <div>
+                <h3>${isTa ? 'நிலம் & பயிர் விவரங்கள்' : 'Step 4: Land & Crop Details'}</h3>
+                <span style="font-size: 0.8rem; color: var(--primary-700); font-weight: 700;">★ Weight: 15%</span>
+              </div>
+            </div>
+
+            <div class="loan-inputs-grid">
+              <div class="loan-field">
+                <label for="fldTenure">${isTa ? 'நில உரிமை / குத்தகை நிலை' : 'Land Ownership / Tenancy Status'}</label>
+                <select id="fldTenure" onchange="loanProfileState.landTenure = this.value">
+                  <option value="owner" ${loanProfileState.landTenure === 'owner' ? 'selected' : ''}>Owner (Freehold Patta holder)</option>
+                  <option value="joint" ${loanProfileState.landTenure === 'joint' ? 'selected' : ''}>Joint Family Land Holding</option>
+                  <option value="tenant" ${loanProfileState.landTenure === 'tenant' ? 'selected' : ''}>Tenant Farmer (Registered Lease Agreement)</option>
+                  <option value="sharecropper" ${loanProfileState.landTenure === 'sharecropper' ? 'selected' : ''}>Oral Lessee / Sharecropper</option>
+                </select>
+              </div>
+
+              <div class="loan-field">
+                <label for="fldLandArea">${isTa ? 'நில அளவு (ஏக்கர்)' : 'Cultivable Land Area (Acres)'}</label>
+                <input type="number" id="fldLandArea" min="0.1" step="0.5" 
+                       value="${loanProfileState.landArea}" 
+                       oninput="loanProfileState.landArea = Number(this.value)">
+              </div>
+
+              <div class="loan-field">
+                <label for="fldCrop">${isTa ? 'முக்கிய பயிர்' : 'Primary Crop'}</label>
+                <select id="fldCrop" onchange="loanProfileState.crop = this.value">
+                  <option value="Paddy" ${loanProfileState.crop === 'Paddy' ? 'selected' : ''}>Paddy (Rice)</option>
+                  <option value="Cotton" ${loanProfileState.crop === 'Cotton' ? 'selected' : ''}>Cotton</option>
+                  <option value="Groundnut" ${loanProfileState.crop === 'Groundnut' ? 'selected' : ''}>Groundnut</option>
+                  <option value="Tomato" ${loanProfileState.crop === 'Tomato' ? 'selected' : ''}>Tomato</option>
+                  <option value="Turmeric" ${loanProfileState.crop === 'Turmeric' ? 'selected' : ''}>Turmeric</option>
+                  <option value="Maize" ${loanProfileState.crop === 'Maize' ? 'selected' : ''}>Maize</option>
+                </select>
+              </div>
+
+              <div class="loan-field">
+                <label for="fldPattern">${isTa ? 'பயிர் சாகுபடி முறை' : 'Cropping Pattern'}</label>
+                <select id="fldPattern" onchange="loanProfileState.croppingPattern = this.value">
+                  <option value="double" ${loanProfileState.croppingPattern === 'double' ? 'selected' : ''}>Double Crop (Kharif + Rabi seasons)</option>
+                  <option value="multi" ${loanProfileState.croppingPattern === 'multi' ? 'selected' : ''}>Multi-Crop / Commercial Intercropping</option>
+                  <option value="single" ${loanProfileState.croppingPattern === 'single' ? 'selected' : ''}>Single Season Crop (Mono-crop)</option>
+                </select>
+              </div>
+
+              <div class="loan-field">
+                <label for="fldIrrigation">${isTa ? 'பாசன வசதி' : 'Irrigation Availability'}</label>
+                <select id="fldIrrigation" onchange="loanProfileState.irrigation = this.value">
+                  <option value="canal" ${loanProfileState.irrigation === 'canal' ? 'selected' : ''}>Canal / River Water</option>
+                  <option value="borewell" ${loanProfileState.irrigation === 'borewell' ? 'selected' : ''}>Borewell / Tube-well</option>
+                  <option value="open_well" ${loanProfileState.irrigation === 'open_well' ? 'selected' : ''}>Open Well</option>
+                  <option value="rainfed" ${loanProfileState.irrigation === 'rainfed' ? 'selected' : ''}>Rainfed Only (Monsoon dependent)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 5: Location & Scheme Criteria (Weight: 10%) -->
+          <div class="loan-step-section">
+            <div class="step-section-header">
+              <span class="step-badge">5</span>
+              <div>
+                <h3>${isTa ? 'இடம் & விவசாயி பிரிவு' : 'Step 5: Location & Scheme Criteria'}</h3>
+                <span style="font-size: 0.8rem; color: var(--primary-700); font-weight: 700;">★ Weight: 10%</span>
+              </div>
+            </div>
+
+            <div class="loan-inputs-grid">
+              <div class="loan-field">
+                <label for="fldState">${isTa ? 'மாநிலம்' : 'State'}</label>
+                <select id="fldState" onchange="loanProfileState.state = this.value">
+                  <option value="Tamil Nadu" selected>Tamil Nadu</option>
+                  <option value="Karnataka">Karnataka</option>
+                  <option value="Andhra Pradesh">Andhra Pradesh</option>
+                </select>
+              </div>
+
+              <div class="loan-field">
+                <label for="fldDistrict">${isTa ? 'மாவட்டம்' : 'District'}</label>
+                <select id="fldDistrict" onchange="loanProfileState.district = this.value">
+                  <option value="thanjavur" ${loanProfileState.district === 'thanjavur' ? 'selected' : ''}>Thanjavur</option>
+                  <option value="thiruvarur" ${loanProfileState.district === 'thiruvarur' ? 'selected' : ''}>Thiruvarur</option>
+                  <option value="nagapattinam" ${loanProfileState.district === 'nagapattinam' ? 'selected' : ''}>Nagapattinam</option>
+                  <option value="mayiladuthurai" ${loanProfileState.district === 'mayiladuthurai' ? 'selected' : ''}>Mayiladuthurai</option>
+                  <option value="madurai" ${loanProfileState.district === 'madurai' ? 'selected' : ''}>Madurai</option>
+                  <option value="erode" ${loanProfileState.district === 'erode' ? 'selected' : ''}>Erode</option>
+                  <option value="salem" ${loanProfileState.district === 'salem' ? 'selected' : ''}>Salem</option>
+                  <option value="dharmapuri" ${loanProfileState.district === 'dharmapuri' ? 'selected' : ''}>Dharmapuri</option>
+                  <option value="coimbatore" ${loanProfileState.district === 'coimbatore' ? 'selected' : ''}>Coimbatore</option>
+                </select>
+              </div>
+
+              <div class="loan-field">
+                <label for="fldCategory">${isTa ? 'விவசாயி வகை' : 'Farmer Category'}</label>
+                <select id="fldCategory" onchange="loanProfileState.farmerCategory = this.value">
+                  <option value="Marginal" ${loanProfileState.farmerCategory === 'Marginal' ? 'selected' : ''}>Marginal (&lt; 2.5 Acres)</option>
+                  <option value="Small" ${loanProfileState.farmerCategory === 'Small' ? 'selected' : ''}>Small (2.5 – 5 Acres)</option>
+                  <option value="Medium" ${loanProfileState.farmerCategory === 'Medium' ? 'selected' : ''}>Medium (5 – 10 Acres)</option>
+                  <option value="Large" ${loanProfileState.farmerCategory === 'Large' ? 'selected' : ''}>Large (&gt; 10 Acres)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-calculate-match">
+            🔍 ${isTa ? 'எனக்கான கடன் பொருத்தத்தை கணக்கிடு' : 'CHECK MY LOAN OPTIONS'}
+          </button>
+        </form>
+      </div>
+
+      <!-- RESULTS SECTION -->
+      <div id="loanMatchResultsSection">
+        ${!matchResult.isValid ? `
+          <!-- Missing Information Alert -->
+          <div class="loan-missing-alert">
+            <div style="font-size: 1.75rem;">⚠️</div>
+            <div>
+              <h4>${isTa ? 'கூடுதல் தகவல்கள் தேவை' : 'More information required'}</h4>
+              <p>${isTa ? 'முழுமையான மதிப்பீட்டை பெற பின்வரும் கட்டாய விவரங்களை படிவத்தில் பூர்த்தி செய்யவும்:' : 'To calculate an accurate loan match score without fabrication, please provide the following required fields:'}</p>
+              <ul>
+                ${matchResult.missingFields.map(f => `<li><strong>${f}</strong></li>`).join('')}
+              </ul>
+            </div>
+          </div>
+        ` : `
+          <!-- 1. Hero Score Block -->
+          <div class="loan-score-hero">
+            <div class="score-hero-tagline">${isTa ? 'உங்கள் கடன் பொருத்தம்' : 'YOUR LOAN MATCH'}</div>
+            <div class="score-main-number">${matchResult.totalScore} <span style="font-size: 2rem; color: var(--text-muted);">/ 100</span></div>
+            <div class="score-number-label">${isTa ? 'கடன் பொருத்த மதிப்பெண்' : 'Loan Match Score'}</div>
+
+            <!-- Mandatory Non-Approval Legal Disclaimer -->
+            <div class="loan-disclaimer-banner">
+              <span style="font-size: 1.5rem;">ℹ️</span>
+              <div>
+                <strong>${isTa ? 'முக்கிய அறிவிப்பு:' : 'Important Notice:'}</strong>
+                ${isTa 
+                  ? 'கடன் பொருத்த மதிப்பெண் என்பது ஒரு வழிகாட்டுதல் கருவி மட்டுமே. இது வங்கியின் இறுதி ஒப்புதல் அல்லது கடன் உத்தரவாதம் அல்ல. இறுதி ஒப்புதல் வங்கியின் ஆவண சரிபார்ப்பு மற்றும் தகுதி சோதனைகளுக்கு உட்பட்டது.' 
+                  : 'Loan Match Score is an informational matching tool. It does not represent a bank\'s credit decision or guarantee loan approval. Final approval depends on the lender\'s eligibility checks, documentation, credit assessment and other applicable criteria.'}
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Visual Score Breakdown (5 Horizontal Progress Bars) -->
+          <div class="score-breakdown-card" style="margin-top: 1.5rem;">
+            <div class="score-breakdown-header">
+              <h3>📊 ${isTa ? 'காரணி வாரியான மதிப்பெண் விவரம்' : 'Visual Score Breakdown'}</h3>
+              <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">
+                ${isTa ? 'மொத்தம்' : 'Total'}: <strong>${matchResult.totalScore} / 100</strong>
+              </span>
+            </div>
+
+            <div class="breakdown-bars-list">
+              <!-- Credit History: 30% -->
+              <div class="score-bar-item">
+                <div class="bar-labels-row">
+                  <span class="bar-title">
+                    <span>💳</span>
+                    <span>${isTa ? 'கடன் வரலாறு (Credit history)' : 'Credit history'}</span>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">(Weight: 30%)</span>
+                  </span>
+                  <span class="bar-points">${matchResult.breakdown.credit.score} / 30</span>
+                </div>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width: ${(matchResult.breakdown.credit.score / 30) * 100}%;"></div>
+                </div>
+              </div>
+
+              <!-- Existing Loans: 25% -->
+              <div class="score-bar-item">
+                <div class="bar-labels-row">
+                  <span class="bar-title">
+                    <span>📑</span>
+                    <span>${isTa ? 'தற்போதைய கடன்கள் (Existing loans)' : 'Existing loans'}</span>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">(Weight: 25%)</span>
+                  </span>
+                  <span class="bar-points">${matchResult.breakdown.existingLoans.score} / 25</span>
+                </div>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width: ${(matchResult.breakdown.existingLoans.score / 25) * 100}%;"></div>
+                </div>
+              </div>
+
+              <!-- Repayment Capacity: 20% -->
+              <div class="score-bar-item">
+                <div class="bar-labels-row">
+                  <span class="bar-title">
+                    <span>💼</span>
+                    <span>${isTa ? 'திருப்பி செலுத்தும் திறன் (Repayment capacity)' : 'Repayment capacity'}</span>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">(Weight: 20%)</span>
+                  </span>
+                  <span class="bar-points">${matchResult.breakdown.repaymentCapacity.score} / 20</span>
+                </div>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width: ${(matchResult.breakdown.repaymentCapacity.score / 20) * 100}%;"></div>
+                </div>
+              </div>
+
+              <!-- Land & Crop: 15% -->
+              <div class="score-bar-item">
+                <div class="bar-labels-row">
+                  <span class="bar-title">
+                    <span>🌾</span>
+                    <span>${isTa ? 'நிலம் & பயிர் விவரங்கள் (Land & crop)' : 'Land & crop'}</span>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">(Weight: 15%)</span>
+                  </span>
+                  <span class="bar-points">${matchResult.breakdown.landCrop.score} / 15</span>
+                </div>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width: ${(matchResult.breakdown.landCrop.score / 15) * 100}%;"></div>
+                </div>
+              </div>
+
+              <!-- Location & Other: 10% -->
+              <div class="score-bar-item">
+                <div class="bar-labels-row">
+                  <span class="bar-title">
+                    <span>📍</span>
+                    <span>${isTa ? 'இடம் & பிற தகுதிகள் (Location & other)' : 'Location & other'}</span>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">(Weight: 10%)</span>
+                  </span>
+                  <span class="bar-points">${matchResult.breakdown.location.score} / 10</span>
+                </div>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width: ${(matchResult.breakdown.location.score / 10) * 100}%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- "Why did I get this score?" Expandable Accordion -->
+            <div class="why-score-card" style="margin-top: 1.75rem;">
+              <button class="why-score-toggle" onclick="toggleWhyScore()">
+                <h4>❓ ${isTa ? 'எனக்கு ஏன் இந்த மதிப்பெண் கிடைத்தது? (Why did I get this score?)' : 'Why did I get this score?'}</h4>
+                <span style="font-size: 1.25rem; color: var(--primary-700);">${isWhyScoreOpen ? '▲' : '▼'}</span>
+              </button>
+
+              ${isWhyScoreOpen ? `
+                <div class="why-score-body">
+                  ${matchResult.explanation.map(exp => `
+                    <div class="weight-factor-box">
+                      <div class="weight-factor-header">
+                        <span>${exp.factor}</span>
+                        <span class="weight-factor-badge">${exp.weight}</span>
+                      </div>
+                      <div class="weight-factor-desc">${exp.description}</div>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
+          </div>
+
+          <!-- 3. Neutral Improvement Suggestions ("Things to check") -->
+          ${matchResult.suggestions.length > 0 ? `
+            <div class="loan-suggestions-card" style="margin-top: 1.5rem;">
+              <div class="loan-suggestions-header">
+                <span>💡</span>
+                <h4>${isTa ? 'கவனிக்க வேண்டியவை (Things to check)' : 'Things to check'}</h4>
+              </div>
+              <p style="font-size: 0.85rem; color: #166534; margin-bottom: 1rem;">
+                ${isTa 
+                  ? 'உங்கள் மதிப்பீட்டில் சில பகுதிகள் குறைவாக உள்ளதால், பின்வரும் ஆவணங்கள் மற்றும் தகவல்களை சரிபார்க்கவும்:' 
+                  : 'Certain evaluation components received a lower subscore. Here are neutral, objective factors to review before applying:'}
+              </p>
+              ${matchResult.suggestions.map(s => `
+                <div class="suggestion-block">
+                  <div class="suggestion-title">⚠️ ${s.title} (${s.scoreInfo})</div>
+                  <ul class="suggestion-list">
+                    ${s.items.map(it => `<li>${it}</li>`).join('')}
+                  </ul>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+
+          <!-- 4. Potential Loan Matches Grid -->
+          <div style="margin-top: 2rem;">
+            <div class="matches-section-header">
+              <div>
+                <h3>🏛️ ${isTa ? 'பொருத்தமான கடன் திட்டங்கள்' : 'POTENTIAL LOAN MATCHES'}</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem;">
+                  ${isTa 
+                    ? 'சரிபார்க்கப்பட்ட அதிகாரப்பூர்வ கடன் திட்டங்கள் மற்றும் வட்டி சலுகைகள்.' 
+                    : 'Matched with official agricultural credit schemes based on your profile and verified guidelines.'}
+                </p>
+              </div>
+            </div>
+
+            <div class="loan-matches-grid">
+              ${recommendations.map(loan => `
+                <div class="loan-match-card">
+                  <div>
+                    <div class="match-card-top">
+                      <div>
+                        <div class="match-card-title">${isTa ? loan.name_ta : loan.name}</div>
+                        <div class="match-provider-name">${isTa ? loan.provider_ta : loan.provider}</div>
+                      </div>
+                      <div class="match-percent-pill">
+                        ${loan.potentialMatchPercent}% ${isTa ? 'பொருத்தம்' : 'Match'}
+                      </div>
+                    </div>
+
+                    <div class="match-details-box">
+                      <div><strong>${isTa ? 'வட்டி விகிதம்' : 'Interest Rate'}:</strong> ${loan.interestRate}</div>
+                      <div style="margin-top: 0.25rem;"><strong>${isTa ? 'கடன் வரம்பு' : 'Limit'}:</strong> ${loan.maxLimit}</div>
+                      <div style="margin-top: 0.25rem;"><strong>${isTa ? 'நோக்கம்' : 'Purpose'}:</strong> ${isTa ? loan.purpose_ta : loan.purpose}</div>
+                    </div>
+
+                    <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.35rem;">
+                      ✅ ${isTa ? 'ஏன் இந்த திட்டம் பொருந்துகிறது?' : 'Why it matches:'}
+                    </div>
+                    <ul class="match-reasons-list">
+                      ${loan.matchReasons.map(r => `
+                        <li class="match-reason-item">
+                          <span>•</span>
+                          <span>${r}</span>
+                        </li>
+                      `).join('')}
+                    </ul>
+
+                    <div class="match-docs-section">
+                      <strong>📄 ${isTa ? 'பொதுவாக தேவைப்படும் ஆவணங்கள்:' : 'Documents commonly required:'}</strong>
+                      <ul class="match-docs-list">
+                        ${loan.requiredDocuments.slice(0, 4).map(d => `<li>${d}</li>`).join('')}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem; font-style: italic;">
+                      ℹ️ ${loan.disclaimerNotice}
+                    </div>
+                    <div class="match-card-actions">
+                      <button class="btn-primary" style="flex: 1; font-size: 0.85rem;" onclick="openDocModal('${loan.id}')">
+                        📋 ${t('docsRequired')}
+                      </button>
+                      <a href="${loan.officialUrl}" target="_blank" rel="noopener" class="btn-secondary" style="font-size: 0.85rem; text-align: center;">
+                        🔗 ${isTa ? 'அதிகாரப்பூர்வ தளம்' : 'Open Official Website'}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `}
+      </div>
     </div>
   `;
 }
+
+/**
+ * Handle Sample Preset Profile Click
+ */
+function applySampleLoanProfile(presetKey) {
+  const service = window.LoanRecommendationService;
+  if (!service) return;
+  const presets = service.getSampleProfiles();
+  if (presets[presetKey]) {
+    activeSampleCaseKey = presetKey;
+    loanProfileState = { ...presets[presetKey] };
+    activeLoanMatchResult = service.calculateLoanMatchScore(loanProfileState);
+    renderLoans();
+    
+    // Smooth scroll down to results
+    setTimeout(() => {
+      const el = document.getElementById('loanMatchResultsSection');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
+}
+
+/**
+ * Handle Form Submission to Calculate Match
+ */
+function submitLoanAssistantForm() {
+  const service = window.LoanRecommendationService;
+  if (!service) return;
+
+  activeSampleCaseKey = '';
+  activeLoanMatchResult = service.calculateLoanMatchScore(loanProfileState);
+  renderLoans();
+
+  setTimeout(() => {
+    const el = document.getElementById('loanMatchResultsSection');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+
+/**
+ * Toggle "Why did I get this score?" explanation
+ */
+function toggleWhyScore() {
+  isWhyScoreOpen = !isWhyScoreOpen;
+  renderLoans();
+}
+
+// Expose functions globally for inline onclick
+window.applySampleLoanProfile = applySampleLoanProfile;
+window.submitLoanAssistantForm = submitLoanAssistantForm;
+window.toggleWhyScore = toggleWhyScore;
+window.renderLoans = renderLoans;
 
 /**
  * 6. RENDER SCHEMES
@@ -1130,131 +1710,619 @@ function renderSchemes() {
   `;
 }
 
+let currentMarketSort = 'highest';
+
 /**
  * Live Mandi Prices Real-Time Sync
  */
-function refreshMandiPrices() {
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const dateStr = now.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
-
-  AGRI_DATA.marketPrices.forEach(m => {
-    // Apply realistic micro-market auction fluctuation (-1.5% to +2.5%)
-    const delta = (Math.random() * 0.04 - 0.015);
-    const oldPrice = m.currentPrice;
-    m.currentPrice = Math.round(m.currentPrice * (1 + delta));
-    m.prevPrice = oldPrice;
-    const diff = m.currentPrice - m.prevPrice;
-    m.trend = diff > 0 ? 'UP' : diff < 0 ? 'DOWN' : 'STABLE';
-    m.percentChange = `${diff >= 0 ? '+' : ''}${((diff / oldPrice) * 100).toFixed(1)}%`;
-    m.date = `Today ${dateStr}, ${timeStr} (e-NAM Live)`;
-    m.history[m.history.length - 1] = m.currentPrice;
-  });
+async function refreshMandiPrices() {
+  if (window.MarketService) {
+    window.MarketService.refreshRates();
+    
+    // Sync AGRI_DATA.marketPrices so the dashboard preview stays consistent
+    const activeRates = window.MarketService.getMarketPrices();
+    if (AGRI_DATA && AGRI_DATA.marketPrices) {
+      AGRI_DATA.marketPrices.forEach(m => {
+        const found = activeRates.find(a => a.cropId === m.cropId);
+        if (found) {
+          m.currentPrice = found.modalPrice;
+          m.prevPrice = found.prevPrice;
+          m.trend = found.trendInfo.direction;
+          m.percentChange = `${found.trendInfo.diff >= 0 ? '+' : ''}${((found.trendInfo.diff / (found.prevPrice || 1)) * 100).toFixed(1)}%`;
+        }
+      });
+    }
+  }
 
   renderMarkets();
 }
 
 /**
- * 7. RENDER MARKETS
+ * 7. RENDER MARKETS (Farmer-Friendly, 5-Second Clarity)
  */
 function renderMarkets() {
   const container = document.getElementById('view-markets');
   if (!container) return;
 
   const isTa = currentLang === 'ta';
-  const markets = AGRI_DATA.marketPrices;
+  const service = window.MarketService;
+
+  if (!service) {
+    container.innerHTML = `<div style="padding: 2rem; text-align: center;">Market service loading...</div>`;
+    return;
+  }
+
+  // Get active filters (from localStorage or defaults)
+  const savedFilters = service.getSelectedFilters();
+  const availableCrops = service.getAvailableCrops();
+  const locations = service.getLocations();
+
+  // Active crop and market data
+  const cropData = service.getCropPrices(savedFilters.cropId, savedFilters);
+  const trendData = service.getPriceTrend(savedFilters.cropId, cropData.market);
+  const comparisonData = service.getMarketComparison(savedFilters.cropId, cropData.district, currentMarketSort);
+  const liveStatus = service.getLiveStatus();
+
+  // Selected State object
+  const currentStateObj = locations.find(l => l.state === (savedFilters.state || 'Tamil Nadu')) || locations[0];
+  const currentDistricts = currentStateObj.districts || [];
+  const currentDistrictObj = currentDistricts.find(d => d.id === (savedFilters.district || 'thiruvarur')) || currentDistricts[0];
+  const currentMarketList = currentDistrictObj ? currentDistrictObj.markets : [];
+
+  // Range pin percentage calculation
+  const minP = cropData.lowestPrice || cropData.minPrice || 2100;
+  const maxP = cropData.highestPrice || cropData.maxPrice || 2500;
+  const curP = cropData.commonPrice || cropData.modalPrice || 2350;
+  const rangeSpan = maxP - minP;
+  const pinPercent = rangeSpan > 0 
+    ? Math.max(6, Math.min(94, Math.round(((curP - minP) / rangeSpan) * 100))) 
+    : 50;
+
+  // 7-day summary metrics
+  const weekPrices = (trendData.history || []).map(h => h.price);
+  const highest7Day = weekPrices.length > 0 ? Math.max(...weekPrices) : maxP;
+  const lowest7Day = weekPrices.length > 0 ? Math.min(...weekPrices) : minP;
+  const changeDiff = trendData.trendInfo ? trendData.trendInfo.diff : 0;
+  const changeSymbol = changeDiff > 0 ? '↑' : changeDiff < 0 ? '↓' : '→';
+  const changeClass = changeDiff > 0 ? 'metric-change-up' : changeDiff < 0 ? 'metric-change-down' : 'metric-change-stable';
+
+  // SVG Line Chart coordinates calculation
+  const history = trendData.history || [];
+  const chartWidth = 800;
+  const chartHeight = 240;
+  const padLeft = 80;
+  const padRight = 50;
+  const padTop = 35;
+  const padBottom = 55;
+  const usableW = chartWidth - padLeft - padRight;
+  const usableH = chartHeight - padTop - padBottom;
+
+  let yMin = lowest7Day;
+  let yMax = highest7Day;
+  if (yMin === yMax) {
+    yMin -= 100;
+    yMax += 100;
+  }
+  const yPadding = (yMax - yMin) * 0.15 || 50;
+  const chartYMin = Math.max(0, Math.floor((yMin - yPadding) / 50) * 50);
+  const chartYMax = Math.ceil((yMax + yPadding) / 50) * 50;
+  const chartYSpan = chartYMax - chartYMin || 1;
+
+  const points = history.map((pt, idx) => {
+    const x = history.length > 1 
+      ? padLeft + (idx * (usableW / (history.length - 1))) 
+      : padLeft + (usableW / 2);
+    const y = padTop + usableH - (((pt.price - chartYMin) / chartYSpan) * usableH);
+    return { ...pt, x, y };
+  });
+
+  const polylinePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const areaPath = points.length > 0
+    ? `${polylinePath} L ${points[points.length - 1].x.toFixed(1)},${(padTop + usableH).toFixed(1)} L ${points[0].x.toFixed(1)},${(padTop + usableH).toFixed(1)} Z`
+    : '';
+
+  // Y-axis grid levels
+  const yStep = Math.round(chartYSpan / 3);
+  const gridLevels = [
+    chartYMax,
+    chartYMax - yStep,
+    chartYMax - (yStep * 2),
+    chartYMin
+  ];
 
   container.innerHTML = `
-    <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
-      <div>
-        <h2>📊 ${isTa ? 'நேரடி சந்தை விலை நிலவரம் (e-NAM)' : 'Live Mandi Market Prices & Trend Analytics'}</h2>
-        <p style="color: var(--text-muted);">${isTa ? 'தமிழ்நாடு மற்றும் முக்கிய சந்தைகளின் நேரடி விலை நிலவரம், போக்கு மற்றும் கடந்த 7 நாள் ஒப்பீடு.' : 'Live market intelligence and multi-mandi rate comparison synced directly with official e-NAM regulated markets.'}</p>
-      </div>
-      <div style="display: flex; align-items: center; gap: 0.6rem;">
-        <span class="badge-live-pulse" style="background: #16a34a;">
-          ● ${isTa ? 'நேரடி e-NAM' : 'LIVE e-NAM'}
-        </span>
-        <button class="gps-locate-btn" onclick="refreshMandiPrices()">
-          🔄 ${isTa ? 'சந்தை விலைகளை புதுப்பி' : 'Refresh Live Rates'}
-        </button>
-      </div>
-    </div>
-
-    <!-- Trend Visualizer Chart -->
-    <div class="mandi-chart-card">
-      <div class="chart-header">
+    <div class="farmer-market-wrap">
+      <!-- 1. Header & Live/Demo Status Banner -->
+      <div class="market-header-row">
         <div>
-          <h3>📈 ${isTa ? '7 நாள் விலை போக்கு (மஞ்சள், ஈரோடு & நெல், தஞ்சாவூர்)' : '7-Day Price Trajectory (Turmeric, Erode & Paddy, Thanjavur)'}</h3>
-          <span style="font-size: 0.8rem; color: var(--text-muted);">${isTa ? 'அளவீடு: ₹ / குவிண்டால்' : 'Unit: INR / Quintal (e-NAM Direct Sync)'}</span>
+          <h2>📊 ${isTa ? 'நேரடி சந்தை விலை நிலவரம்' : 'MARKET PRICES'}</h2>
+          <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.2rem;">
+            ${isTa ? 'விவசாயிகளுக்கான நேரடி மண்டி விலை நிலவரம், விலை வரம்பு மற்றும் 7 நாள் போக்கு.' : 'Real-time mandi crop prices, simple price ranges, and 7-day trend analytics.'}
+          </p>
+        </div>
+
+        <div class="market-status-bar">
+          <span class="badge-source">
+            🏛️ ${isTa ? 'அரசு தரவு / அக்மார்க்நெட்' : 'Government of India / Agmarknet'}
+          </span>
+          ${!liveStatus.isLive ? `
+            <span class="badge-demo-notice" title="Direct API connection offline or simulated">
+              ⚠️ ${isTa ? 'நேரடி விலை கிடைக்கவில்லை — மாதிரி தரவு காட்டப்படுகிறது' : 'Live price unavailable — showing demo data'}
+            </span>
+          ` : `
+            <span class="badge-live-pulse" style="background: #16a34a;">
+              ● ${isTa ? 'நேரடி அக்மார்க்நெட்' : 'LIVE Agmarknet'}
+            </span>
+          `}
+          <button class="gps-locate-btn" onclick="refreshMandiPrices()" title="Refresh latest price rates">
+            🔄 ${isTa ? 'விலைகளை புதுப்பி' : 'Refresh Rates'}
+          </button>
         </div>
       </div>
 
-      <div class="svg-chart-container">
-        <svg viewBox="0 0 800 200" width="100%" height="100%">
-          <!-- Background Grid lines -->
-          <line x1="50" y1="30" x2="780" y2="30" stroke="#f1f5f9" stroke-width="1"/>
-          <line x1="50" y1="80" x2="780" y2="80" stroke="#f1f5f9" stroke-width="1"/>
-          <line x1="50" y1="130" x2="780" y2="130" stroke="#f1f5f9" stroke-width="1"/>
-          <line x1="50" y1="180" x2="780" y2="180" stroke="#e2e8f0" stroke-width="2"/>
+      <!-- 2. Easy Search & Select Controls -->
+      <div class="farmer-search-card">
+        <div class="farmer-search-row">
+          <!-- Quick Crop Chips -->
+          <div>
+            <div class="crop-chip-label">${isTa ? 'விரைவு பயிர் தேர்வு:' : 'Quick Select Crop:'}</div>
+            <div class="crop-quick-chips" style="margin-top: 0.4rem;">
+              ${availableCrops.map(c => `
+                <button class="crop-chip ${c.id === savedFilters.cropId ? 'active' : ''}" 
+                        onclick="onSelectCropQuick('${c.id}')">
+                  <span>${c.icon}</span>
+                  <span>${isTa ? c.name_ta : c.name}</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
 
-          <!-- Axis Labels -->
-          <text x="10" y="35" font-size="10" fill="#94a3b8">₹17k</text>
-          <text x="10" y="85" font-size="10" fill="#94a3b8">₹12k</text>
-          <text x="10" y="135" font-size="10" fill="#94a3b8">₹6k</text>
-          <text x="10" y="185" font-size="10" fill="#94a3b8">₹2k</text>
+          <!-- Dropdown Selectors Grid -->
+          <div class="farmer-filters-grid">
+            <div class="filter-field">
+              <label for="mktSelectCrop">${isTa ? 'பயிர்' : 'Select Crop 🔍'}</label>
+              <select id="mktSelectCrop" onchange="onCropFilterChange(this.value)">
+                ${availableCrops.map(c => `
+                  <option value="${c.id}" ${c.id === savedFilters.cropId ? 'selected' : ''}>
+                    ${c.icon} ${isTa ? c.name_ta : c.name}
+                  </option>
+                `).join('')}
+              </select>
+            </div>
 
-          <!-- Day markers -->
-          <text x="70" y="195" font-size="10" fill="#64748b">Day 1</text>
-          <text x="180" y="195" font-size="10" fill="#64748b">Day 2</text>
-          <text x="300" y="195" font-size="10" fill="#64748b">Day 3</text>
-          <text x="420" y="195" font-size="10" fill="#64748b">Day 4</text>
-          <text x="540" y="195" font-size="10" fill="#64748b">Day 5</text>
-          <text x="650" y="195" font-size="10" fill="#64748b">Day 6</text>
-          <text x="750" y="195" font-size="10" fill="#047857" font-weight="bold">Today</text>
+            <div class="filter-field">
+              <label for="mktSelectState">${isTa ? 'மாநிலம்' : 'Select State'}</label>
+              <select id="mktSelectState" onchange="onStateFilterChange(this.value)">
+                ${locations.map(l => `
+                  <option value="${l.state}" ${l.state === savedFilters.state ? 'selected' : ''}>
+                    ${isTa ? l.state_ta : l.state}
+                  </option>
+                `).join('')}
+              </select>
+            </div>
 
-          <!-- Turmeric Curve (Gold / Amber) -->
-          <path d="M70,75 L180,68 L300,62 L420,58 L540,54 L650,52 L750,44" fill="none" stroke="#d97706" stroke-width="3.5" stroke-linecap="round"/>
-          <!-- Points -->
-          <circle cx="750" cy="44" r="5" fill="#d97706"/>
-          <text x="690" y="38" font-size="11" font-weight="bold" fill="#d97706">Turmeric ₹16.8k</text>
+            <div class="filter-field">
+              <label for="mktSelectDistrict">${isTa ? 'மாவட்டம்' : 'Select District'}</label>
+              <select id="mktSelectDistrict" onchange="onDistrictFilterChange(this.value)">
+                ${currentDistricts.map(d => `
+                  <option value="${d.id}" ${d.id === savedFilters.district ? 'selected' : ''}>
+                    ${isTa ? d.name_ta : d.name}
+                  </option>
+                `).join('')}
+              </select>
+            </div>
 
-          <!-- Paddy Curve (Green) -->
-          <path d="M70,175 L180,172 L300,173 L420,170 L540,168 L650,167 L750,162" fill="none" stroke="#10b981" stroke-width="3.5" stroke-linecap="round"/>
-          <circle cx="750" cy="162" r="5" fill="#10b981"/>
-          <text x="695" y="156" font-size="11" font-weight="bold" fill="#065f46">Paddy ₹2,320</text>
-        </svg>
+            <div class="filter-field">
+              <label for="mktSelectMarket">${isTa ? 'சந்தை / மண்டி' : 'Select Market'}</label>
+              <select id="mktSelectMarket" onchange="onMarketFilterChange(this.value)">
+                ${currentMarketList.map(m => `
+                  <option value="${m.name}" ${savedFilters.market && m.name.includes(savedFilters.market) ? 'selected' : ''}>
+                    ${isTa ? m.name_ta : m.name}
+                  </option>
+                `).join('')}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Primary Farmer Price Card (5-Second Understanding) -->
+      <div class="farmer-price-hero">
+        <div class="hero-crop-banner">
+          <div class="farmer-crop-title">
+            <span>${cropData.cropId === 'paddy' ? '🌾' : cropData.cropId === 'cotton' ? '☁️' : cropData.cropId === 'tomato' ? '🍅' : cropData.cropId === 'groundnut' ? '🥜' : cropData.cropId === 'onion' ? '🧅' : cropData.cropId === 'maize' ? '🌽' : '🪴'}</span>
+            <span>${isTa ? cropData.cropName_ta : cropData.cropName}</span>
+          </div>
+          <div class="farmer-market-badge">
+            📍 ${isTa ? (cropData.market_ta || cropData.market) : cropData.market}
+          </div>
+        </div>
+
+        <div class="hero-price-display">
+          <div class="hero-price-label">${isTa ? 'இன்றைய பொதுவான சந்தை விலை' : "Today's Common Price"}</div>
+          <div class="hero-price-row">
+            <div class="hero-price-val">₹${cropData.commonPrice.toLocaleString('en-IN')}</div>
+            <div class="hero-unit-label">/ ${isTa ? 'குவிண்டால்' : cropData.unit}</div>
+            
+            <div class="farmer-trend-pill ${cropData.trendInfo.direction === 'UP' ? 'trend-pill-up' : cropData.trendInfo.direction === 'DOWN' ? 'trend-pill-down' : 'trend-pill-stable'}">
+              <span>${cropData.trendInfo.symbol}</span>
+              <span>${cropData.trendInfo.diff !== 0 ? `₹${Math.abs(cropData.trendInfo.diff).toLocaleString('en-IN')}` : ''} ${isTa ? 'முந்தைய நாளை விட' : 'from previous available day'}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Meta Grid -->
+        <div class="hero-meta-row">
+          <div class="hero-meta-item">
+            <span class="meta-lbl">${isTa ? 'வழக்கமான விலை' : 'Typical Price'}</span>
+            <span class="meta-val">₹${cropData.typicalPrice.toLocaleString('en-IN')} / ${cropData.unit}</span>
+          </div>
+
+          <div class="hero-meta-item">
+            <span class="meta-lbl">${isTa ? 'விலை வரம்பு' : 'Price Range'}</span>
+            <span class="meta-val">₹${cropData.lowestPrice.toLocaleString('en-IN')} — ₹${cropData.highestPrice.toLocaleString('en-IN')}</span>
+          </div>
+
+          <div class="hero-meta-item">
+            <span class="meta-lbl">${isTa ? 'கடைசி புதுப்பிப்பு' : 'Last Updated'}</span>
+            <span class="meta-val">${cropData.arrivalDate}</span>
+          </div>
+
+          <div class="hero-meta-item">
+            <span class="meta-lbl">${isTa ? 'மூலம்' : 'Source'}</span>
+            <span class="meta-val" style="color: var(--primary-800);">${cropData.source}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Explain "Modal Price" (3-Pillar Breakdown with Tooltip) -->
+      <div class="price-pillars-card">
+        <div class="pillars-grid">
+          <div class="pillar-box">
+            <div class="pillar-title">${isTa ? 'குறைந்தபட்ச விலை' : 'Lowest price'}</div>
+            <div class="pillar-price">₹${cropData.lowestPrice.toLocaleString('en-IN')}</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem;">/ ${cropData.unit}</div>
+          </div>
+
+          <div class="pillar-box pillar-common">
+            <div class="pillar-title">
+              <span>${isTa ? 'பொதுவான விலை' : 'Common price'}</span>
+              <span class="tooltip-container" tabindex="0" role="button" aria-label="Information about common price">
+                <span class="tooltip-icon">i</span>
+                <span class="tooltip-box">
+                  ${isTa 
+                    ? 'பொதுவான விலை = இந்த சந்தையில் பெரும்பாலான விற்பனைகள் நடக்கும் விலை.' 
+                    : 'Common price = the price seen most often in this market.'}
+                </span>
+              </span>
+            </div>
+            <div class="pillar-price">₹${cropData.commonPrice.toLocaleString('en-IN')}</div>
+            <div style="font-size: 0.85rem; font-weight: 700; color: var(--primary-700); margin-top: 0.35rem;">
+              ★ ${isTa ? 'பெரும்பாலான விற்பனை விலை' : 'Most frequent selling rate'}
+            </div>
+          </div>
+
+          <div class="pillar-box">
+            <div class="pillar-title">${isTa ? 'அதிகபட்ச விலை' : 'Highest price'}</div>
+            <div class="pillar-price">₹${cropData.highestPrice.toLocaleString('en-IN')}</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem;">/ ${cropData.unit}</div>
+          </div>
+        </div>
+
+        <div class="tooltip-helper-note">
+          💡 <strong>${isTa ? 'தெரிந்து கொள்ளுங்கள்:' : 'Farmer Note:'}</strong> 
+          ${isTa 
+            ? 'அரசு பதிவேடுகளில் "Modal Price" என்று அழைக்கப்படுவது தான் நமது "பொதுவான விலை". இது பெரும்பாலான விவசாயிகள் விற்கும் உண்மை விலையாகும்.' 
+            : 'In government data, "Modal Price" is reported as Common price — the actual rate at which most crop lots were auctioned.'}
+        </div>
+      </div>
+
+      <!-- 5. Visual Price Range Bar -->
+      <div class="price-range-card">
+        <div class="range-header">
+          <h4>📊 ${isTa ? 'விலை வரம்பு வரைபடம்' : 'PRICE RANGE VISUALIZATION'}</h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">
+            ${isTa ? 'குறைந்தபட்சம் முதல் அதிகபட்சம் வரை இன்றைய சந்தை விலை எங்கு நிற்கிறது என்பதை எளிதாக காணுங்கள்.' : 'See exactly where today\'s common price stands between lowest and highest auction rates.'}
+          </p>
+        </div>
+
+        <div class="range-track-wrap">
+          <div class="range-track-bar">
+            <!-- Position Marker Pin -->
+            <div class="range-pin-marker" style="left: ${pinPercent}%;">
+              <div class="pin-bubble">
+                ₹${cropData.commonPrice.toLocaleString('en-IN')} ${isTa ? 'பொதுவான விலை' : 'Common price'}
+              </div>
+              <div class="pin-dot"></div>
+            </div>
+          </div>
+
+          <div class="range-extremes">
+            <div class="range-extreme-box">
+              <span class="extreme-title">${isTa ? 'குறைந்தபட்சம்' : 'Lowest'}</span>
+              <span class="extreme-price">₹${cropData.lowestPrice.toLocaleString('en-IN')}</span>
+            </div>
+            <div class="range-extreme-box right">
+              <span class="extreme-title">${isTa ? 'அதிகபட்சம்' : 'Highest'}</span>
+              <span class="extreme-price">₹${cropData.highestPrice.toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. 7-Day Price Summary -->
+      <div class="summary-7day-card">
+        <div class="range-header" style="margin-bottom: 0.5rem;">
+          <h4>🗓️ ${isTa ? '7 நாள் விலை சுருக்கம்' : '7-DAY PRICE SUMMARY'}</h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">
+            ${isTa ? 'வரைபடத்தை படிக்காமலேயே கடந்த வாரத்தின் முக்கிய மாற்றங்களை உடனே புரிந்து கொள்ளுங்கள்.' : 'Understand week-long movement in seconds without needing to analyze complex charts.'}
+          </p>
+        </div>
+
+        <div class="summary-cards-grid">
+          <div class="summary-metric-box">
+            <div class="metric-lbl">${isTa ? 'அதிகபட்சம்' : 'Highest'}</div>
+            <div class="metric-num">₹${highest7Day.toLocaleString('en-IN')}</div>
+          </div>
+
+          <div class="summary-metric-box">
+            <div class="metric-lbl">${isTa ? 'குறைந்தபட்சம்' : 'Lowest'}</div>
+            <div class="metric-num">₹${lowest7Day.toLocaleString('en-IN')}</div>
+          </div>
+
+          <div class="summary-metric-box active-current">
+            <div class="metric-lbl">${isTa ? 'இன்றைய விலை' : 'Current'}</div>
+            <div class="metric-num" style="color: var(--primary-800);">₹${curP.toLocaleString('en-IN')}</div>
+          </div>
+
+          <div class="summary-metric-box">
+            <div class="metric-lbl">${isTa ? 'மாற்றம்' : 'Change'}</div>
+            <div class="metric-num ${changeClass}">
+              ${changeSymbol} ₹${Math.abs(changeDiff).toLocaleString('en-IN')}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. Simple 7-Day Price Trend Chart -->
+      <div class="farmer-chart-box">
+        <div class="chart-header-simple">
+          <div>
+            <h3>📈 ${isTa ? '7 நாள் விலை போக்கு (சந்தை விலை)' : '7-Day Price Trend (Market Price)'}</h3>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">
+              ${trendData.isPartial ? (isTa ? 'கிடைக்கக்கூடிய சந்தை தரவு காட்டப்படுகிறது.' : 'Showing available market data.') : (isTa ? 'அளவீடு: ₹ / குவிண்டால்' : 'Unit: Price ₹ / quintal')}
+            </span>
+          </div>
+        </div>
+
+        <div class="chart-svg-wrap">
+          <svg viewBox="0 0 ${chartWidth} ${chartHeight}" width="100%" height="100%" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="farmerChartGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#10b981" stop-opacity="0.35"/>
+                <stop offset="100%" stop-color="#10b981" stop-opacity="0.0"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Horizontal Grid lines & Y labels -->
+            ${gridLevels.map(level => {
+              const y = padTop + usableH - (((level - chartYMin) / chartYSpan) * usableH);
+              return `
+                <line x1="${padLeft}" y1="${y}" x2="${chartWidth - padRight}" y2="${y}" stroke="#f1f5f9" stroke-width="1.5"/>
+                <text x="${padLeft - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="#94a3b8" font-weight="600">
+                  ₹${level.toLocaleString('en-IN')}
+                </text>
+              `;
+            }).join('')}
+
+            <!-- Bottom X-axis baseline -->
+            <line x1="${padLeft}" y1="${padTop + usableH}" x2="${chartWidth - padRight}" y2="${padTop + usableH}" stroke="#e2e8f0" stroke-width="2"/>
+
+            <!-- Area fill -->
+            ${areaPath ? `<path d="${areaPath}" fill="url(#farmerChartGrad)"/>` : ''}
+
+            <!-- Single Main Line: Market Price -->
+            ${polylinePath ? `<path d="${polylinePath}" fill="none" stroke="#059669" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
+
+            <!-- Interactive Circles and X Date Labels -->
+            ${points.map((pt, idx) => {
+              const isLast = idx === points.length - 1;
+              return `
+                <!-- Point Marker -->
+                <circle cx="${pt.x}" cy="${pt.y}" r="${isLast ? '7' : '5.5'}" 
+                        fill="${isLast ? '#047857' : '#10b981'}" 
+                        stroke="#ffffff" stroke-width="2.5"
+                        style="cursor: pointer;"
+                        onmouseover="showChartHoverTooltip('${pt.date}', '₹${pt.price.toLocaleString('en-IN')} / ${cropData.unit}')"
+                        onclick="showChartHoverTooltip('${pt.date}', '₹${pt.price.toLocaleString('en-IN')} / ${cropData.unit}')"
+                        tabindex="0"
+                        aria-label="${pt.date}: ₹${pt.price} per quintal"
+                />
+
+                <!-- Date Label on X Axis -->
+                <text x="${pt.x}" y="${padTop + usableH + 22}" text-anchor="middle" font-size="11" 
+                      fill="${isLast ? '#047857' : '#64748b'}" font-weight="${isLast ? '800' : '600'}">
+                  ${pt.date}
+                </text>
+              `;
+            }).join('')}
+          </svg>
+        </div>
+
+        <!-- Interactive Tap / Hover Result Pill -->
+        <div class="chart-tooltip-display">
+          <div id="chartTooltipPill" class="chart-hover-pill">
+            <span>📅 ${history[history.length - 1] ? history[history.length - 1].date : 'Today'}</span>
+            <span>₹${curP.toLocaleString('en-IN')} / ${cropData.unit}</span>
+          </div>
+        </div>
+
+        <!-- Simple Trend Explanation Message -->
+        <div class="trend-explanation-banner ${trendData.trendInfo.direction === 'UP' ? 'banner-up' : trendData.trendInfo.direction === 'DOWN' ? 'banner-down' : 'banner-stable'}">
+          <div class="banner-icon">${trendData.trendInfo.direction === 'UP' ? '📈' : trendData.trendInfo.direction === 'DOWN' ? '📉' : '▬'}</div>
+          <div>
+            <div class="banner-heading">
+              ${trendData.trendInfo.symbol} ${isTa ? (trendData.trendInfo.direction === 'UP' ? 'விலை உயர்ந்து வருகிறது' : trendData.trendInfo.direction === 'DOWN' ? 'விலை சரிந்து வருகிறது' : 'விலை நிலையாக உள்ளது') : (trendData.trendInfo.direction === 'UP' ? 'Price is rising' : trendData.trendInfo.direction === 'DOWN' ? 'Price is falling' : 'Price is stable')}
+            </div>
+            <div class="banner-detail">
+              ${isTa ? trendData.trendInfo.detailedMsgTa : trendData.trendInfo.detailedMsgEn}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8. "WHERE CAN I GET A BETTER PRICE?" Section -->
+      <div class="better-market-card">
+        <div class="better-market-header">
+          <div>
+            <h3>🏪 ${isTa ? 'எங்கே சிறந்த விலை கிடைக்கும்?' : 'WHERE CAN I GET A BETTER PRICE?'}</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem;">
+              ${isTa ? 'அருகிலுள்ள முக்கிய ஒழுங்குமுறை சந்தைகளின் விலை ஒப்பீடு.' : 'Compare nearby regulated markets for the best reported rates.'}
+            </p>
+          </div>
+
+          <div class="market-sort-controls">
+            <button class="sort-btn ${currentMarketSort === 'highest' ? 'active' : ''}" onclick="onMarketSortChange('highest')">
+              ▲ ${isTa ? 'அதிகபட்ச விலை' : 'Highest price'}
+            </button>
+            <button class="sort-btn ${currentMarketSort === 'lowest' ? 'active' : ''}" onclick="onMarketSortChange('lowest')">
+              ▼ ${isTa ? 'குறைந்த விலை' : 'Lowest price'}
+            </button>
+            <button class="sort-btn ${currentMarketSort === 'nearest' ? 'active' : ''}" onclick="onMarketSortChange('nearest')">
+              📍 ${isTa ? 'அருகிலுள்ள சந்தை' : 'Nearest market'}
+            </button>
+          </div>
+        </div>
+
+        <table class="market-comparison-table">
+          <thead>
+            <tr>
+              <th>${isTa ? 'சந்தை / மண்டி' : 'Market'}</th>
+              <th>${isTa ? 'பொதுவான விலை' : 'Common Price'}</th>
+              <th>${isTa ? 'விலை போக்கு' : 'Trend'}</th>
+              <th>${isTa ? 'தொலைவு' : 'Distance'}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${comparisonData.items.map(m => `
+              <tr>
+                <td>
+                  <strong>${isTa ? m.market_ta : m.market}</strong>
+                  ${m.isHighestReported ? `<span class="highest-price-tag">★ ${isTa ? 'அதிகபட்ச விலை' : 'Highest reported price'}</span>` : ''}
+                </td>
+                <td>
+                  <strong style="color: var(--primary-900); font-size: 1.1rem;">
+                    ₹${m.commonPrice.toLocaleString('en-IN')}
+                  </strong>
+                  <span style="font-size: 0.8rem; color: var(--text-muted);">/ qtl</span>
+                </td>
+                <td>
+                  <span class="${m.trendInfo.direction === 'UP' ? 'trend-up' : m.trendInfo.direction === 'DOWN' ? 'trend-down' : 'trend-stable'}">
+                    ${m.trendInfo.symbol} ${m.trendInfo.diff !== 0 ? `₹${Math.abs(m.trendInfo.diff)}` : isTa ? 'நிலையானது' : 'Stable'}
+                  </span>
+                </td>
+                <td style="color: var(--text-muted); font-size: 0.85rem;">
+                  ${m.distanceKm === 0 ? (isTa ? 'உள்ளூர் சந்தை' : 'Selected local market') : `~${m.distanceKm} km`}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <!-- Cost & Commission Disclaimer -->
+        <div class="transport-disclaimer-box">
+          <span style="font-size: 1.25rem;">⚠️</span>
+          <span>
+            ${isTa ? comparisonData.disclaimer_ta : comparisonData.disclaimer}
+          </span>
+        </div>
       </div>
     </div>
-
-    <!-- Mandi Rates Table -->
-    <table class="mandi-table">
-      <thead>
-        <tr>
-          <th>${isTa ? 'பயிர்' : 'Crop'}</th>
-          <th>${isTa ? 'சந்தை / ஒழுங்குமுறை விற்பனைக்கூடம்' : 'Mandi / Regulated Market'}</th>
-          <th>${isTa ? 'இன்றைய விலை' : 'Current Rate'}</th>
-          <th>${isTa ? 'முந்தைய விலை' : 'Prev Rate'}</th>
-          <th>${isTa ? 'போக்கு' : 'Trend'}</th>
-          <th>${isTa ? 'தேதி & நேரம்' : 'Sync Status'}</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${markets.map(m => `
-          <tr>
-            <td><strong>${isTa ? m.cropName_ta : m.cropName}</strong></td>
-            <td>${isTa ? m.mandi_ta : m.mandi}</td>
-            <td><strong style="color: var(--primary-900);">₹${m.currentPrice.toLocaleString('en-IN')}</strong> <span style="font-size: 0.75rem; color: var(--text-muted);">${m.unit}</span></td>
-            <td>₹${m.prevPrice.toLocaleString('en-IN')}</td>
-            <td class="${m.trend === 'UP' ? 'trend-up' : m.trend === 'DOWN' ? 'trend-down' : 'trend-stable'}">
-              ${m.trend === 'UP' ? '▲ Rising' : m.trend === 'DOWN' ? '▼ Falling' : '▬ Stable'} (${m.percentChange})
-            </td>
-            <td style="font-size: 0.8rem; color: var(--text-muted);">${m.date}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
   `;
 }
+
+/**
+ * Filter Change Event Handlers (Persisted in localStorage)
+ */
+function onSelectCropQuick(cropId) {
+  const service = window.MarketService;
+  if (!service) return;
+  const current = service.getSelectedFilters();
+  current.cropId = cropId;
+  service.saveSelectedFilters(current);
+  renderMarkets();
+}
+
+function onCropFilterChange(cropId) {
+  const service = window.MarketService;
+  if (!service) return;
+  const current = service.getSelectedFilters();
+  current.cropId = cropId;
+  service.saveSelectedFilters(current);
+  renderMarkets();
+}
+
+function onStateFilterChange(stateName) {
+  const service = window.MarketService;
+  if (!service) return;
+  const locations = service.getLocations();
+  const stateObj = locations.find(l => l.state === stateName);
+  const current = service.getSelectedFilters();
+  current.state = stateName;
+  if (stateObj && stateObj.districts && stateObj.districts.length > 0) {
+    current.district = stateObj.districts[0].id;
+    current.market = stateObj.districts[0].markets[0] ? stateObj.districts[0].markets[0].name : '';
+  }
+  service.saveSelectedFilters(current);
+  renderMarkets();
+}
+
+function onDistrictFilterChange(districtId) {
+  const service = window.MarketService;
+  if (!service) return;
+  const locations = service.getLocations();
+  const current = service.getSelectedFilters();
+  const stateObj = locations.find(l => l.state === current.state) || locations[0];
+  const distObj = (stateObj.districts || []).find(d => d.id === districtId);
+  current.district = districtId;
+  if (distObj && distObj.markets && distObj.markets.length > 0) {
+    current.market = distObj.markets[0].name;
+  }
+  service.saveSelectedFilters(current);
+  renderMarkets();
+}
+
+function onMarketFilterChange(marketName) {
+  const service = window.MarketService;
+  if (!service) return;
+  const current = service.getSelectedFilters();
+  current.market = marketName;
+  service.saveSelectedFilters(current);
+  renderMarkets();
+}
+
+function onMarketSortChange(sortOption) {
+  currentMarketSort = sortOption;
+  renderMarkets();
+}
+
+function showChartHoverTooltip(date, priceText) {
+  const pill = document.getElementById('chartTooltipPill');
+  if (pill) {
+    pill.innerHTML = `<span>📅 ${date}</span><span>${priceText}</span>`;
+  }
+}
+
+// Expose handlers to window for inline onclick / onchange
+window.onSelectCropQuick = onSelectCropQuick;
+window.onCropFilterChange = onCropFilterChange;
+window.onStateFilterChange = onStateFilterChange;
+window.onDistrictFilterChange = onDistrictFilterChange;
+window.onMarketFilterChange = onMarketFilterChange;
+window.onMarketSortChange = onMarketSortChange;
+window.showChartHoverTooltip = showChartHoverTooltip;
+window.refreshMandiPrices = refreshMandiPrices;
+window.renderMarkets = renderMarkets;
 
 /**
  * 8. RENDER HELPLINES

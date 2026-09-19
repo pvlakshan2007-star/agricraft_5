@@ -1,4 +1,4 @@
-﻿# AGRI CRAFT-AI — Product Requirements Document
+# AGRI CRAFT-AI — Product Requirements Document
 
 ## 1. Product Overview
 
