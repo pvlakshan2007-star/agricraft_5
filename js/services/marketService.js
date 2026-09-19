@@ -1199,7 +1199,38 @@
    * Attempt live fetch from data.gov.in / Agmarknet with graceful fallback
    */
   async function fetchLiveAgmarknetData(filters = {}) {
-    // Resource ID for Government of India mandi prices on data.gov.in
+    // 1. First attempt to fetch from backend PostgreSQL REST API
+    try {
+      if (window.AgriApiService) {
+        const backendRes = await window.AgriApiService.getMarketPrices(filters);
+        if (backendRes && backendRes.success && backendRes.prices && backendRes.prices.length > 0) {
+          liveStatus.isLive = true;
+          liveStatus.statusNote = backendRes.source === 'database' 
+            ? 'Synced with Backend PostgreSQL Database' 
+            : 'Synced with Agmarknet Baseline Service';
+          liveStatus.lastSyncTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+          // Merge backend prices into local store
+          backendRes.prices.forEach(bp => {
+            const match = MARKET_DATABASE.find(m => 
+              m.cropName.toLowerCase() === bp.crop_name.toLowerCase() &&
+              (bp.location ? m.district.toLowerCase() === bp.location.toLowerCase() || m.districtName.toLowerCase() === bp.location.toLowerCase() : true)
+            );
+            if (match) {
+              match.modalPrice = parseFloat(bp.price) || match.modalPrice;
+              match.market = bp.market_name || match.market;
+              match.isLive = true;
+            }
+          });
+
+          return { success: true, isLive: true, source: backendRes.source };
+        }
+      }
+    } catch (apiErr) {
+      console.debug('Backend market price sync note:', apiErr.message);
+    }
+
+    // 2. Resource ID for Government of India mandi prices on data.gov.in (Direct Web Fallback)
     const resourceId = '9ef84268-d588-465a-a308-a864a43d0070';
     const testUrl = `https://api.data.gov.in/resource/${resourceId}?format=json&limit=5`;
 
@@ -1220,8 +1251,7 @@
         }
       }
     } catch (err) {
-      // Offline, timeout, or CORS restriction on browser-side data.gov.in call
-      // As instructed: "If live data is unavailable: use existing demo data and clearly display: 'Live price unavailable — showing demo data'"
+      // Offline or CORS restriction on direct browser call
     }
 
     liveStatus.isLive = false;

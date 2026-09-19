@@ -6,7 +6,10 @@
 
 // Default Farmer Profile State
 let currentProfile = {
+  id: 1,
   name: 'Murugan K',
+  phone: '9876543210',
+  email: 'murugan.k@agricraft.demo',
   district: 'thanjavur',
   farmSize: 2.5,
   unit: 'Acres',
@@ -1616,6 +1619,14 @@ function applySampleLoanProfile(presetKey) {
     activeSampleCaseKey = presetKey;
     loanProfileState = { ...presets[presetKey] };
     activeLoanMatchResult = service.calculateLoanMatchScore(loanProfileState);
+
+    // Persist recommendation asynchronously to backend PostgreSQL
+    if (window.AgriApiService) {
+      window.AgriApiService.calculateLoanRecommendation(loanProfileState).catch(err => {
+        console.debug('Backend loan recommendation sync note:', err.message);
+      });
+    }
+
     renderLoans();
     
     // Smooth scroll down to results
@@ -1635,6 +1646,14 @@ function submitLoanAssistantForm() {
 
   activeSampleCaseKey = '';
   activeLoanMatchResult = service.calculateLoanMatchScore(loanProfileState);
+
+  // Persist recommendation asynchronously to backend PostgreSQL
+  if (window.AgriApiService) {
+    window.AgriApiService.calculateLoanRecommendation(loanProfileState).catch(err => {
+      console.debug('Backend loan recommendation sync note:', err.message);
+    });
+  }
+
   renderLoans();
 
   setTimeout(() => {
@@ -1666,6 +1685,13 @@ function renderSchemes() {
 
   const isTa = currentLang === 'ta';
   const schemes = AgriEngine.matchSchemes(currentProfile);
+
+  // Asynchronously record scheme matches in backend PostgreSQL
+  if (window.AgriApiService) {
+    window.AgriApiService.matchGovernmentSchemes(currentProfile.id || 1).catch(err => {
+      console.debug('Backend scheme matching sync note:', err.message);
+    });
+  }
 
   container.innerHTML = `
     <div style="margin-bottom: 1.5rem;">
@@ -2387,6 +2413,14 @@ function renderProfileForm() {
             <input type="text" class="form-control" id="profName" value="${currentProfile.name}" required>
           </div>
           <div class="form-group">
+            <label>${isTa ? 'தொலைபேசி எண்' : 'Phone Number'}</label>
+            <input type="tel" class="form-control" id="profPhone" value="${currentProfile.phone || ''}" placeholder="e.g. 9876543210">
+          </div>
+          <div class="form-group">
+            <label>${isTa ? 'மின்னஞ்சல்' : 'Email Address'}</label>
+            <input type="email" class="form-control" id="profEmail" value="${currentProfile.email || ''}" placeholder="farmer@agricraft.com">
+          </div>
+          <div class="form-group">
             <label>${isTa ? 'மாவட்டம்' : 'District'}</label>
             <select class="form-control" id="profDistrict">
               ${AGRI_DATA.districts.map(d => `<option value="${d.id}" ${currentProfile.district === d.id ? 'selected' : ''}>${isTa ? d.name_ta : d.name}</option>`).join('')}
@@ -2440,9 +2474,11 @@ function renderProfileForm() {
     </div>
   `;
 
-  document.getElementById('farmerProfileForm').addEventListener('submit', (e) => {
+  document.getElementById('farmerProfileForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     currentProfile.name = document.getElementById('profName').value;
+    currentProfile.phone = document.getElementById('profPhone') ? document.getElementById('profPhone').value : (currentProfile.phone || '');
+    currentProfile.email = document.getElementById('profEmail') ? document.getElementById('profEmail').value : (currentProfile.email || '');
     currentProfile.district = document.getElementById('profDistrict').value;
     currentProfile.farmerCategory = document.getElementById('profCategory').value;
     currentProfile.farmSize = parseFloat(document.getElementById('profFarmSize').value) || 2;
@@ -2453,9 +2489,23 @@ function renderProfileForm() {
     currentProfile.cropStage = document.getElementById('profStage').value;
 
     localStorage.setItem('agri_craft_profile', JSON.stringify(currentProfile));
+
+    // Asynchronously save to PostgreSQL backend API
+    if (window.AgriApiService) {
+      try {
+        const apiRes = await window.AgriApiService.saveFarmerProfile(currentProfile);
+        if (apiRes && apiRes.farmer && apiRes.farmer.id) {
+          currentProfile.id = apiRes.farmer.id;
+          localStorage.setItem('agri_craft_farmer_id', apiRes.farmer.id);
+        }
+      } catch (saveErr) {
+        console.warn('Backend profile persistence notice:', saveErr.message);
+      }
+    }
+
     syncLiveWeatherForActiveDistrict(liveWeather.forecastDays);
     runInitialAssessments();
-    alert(isTa ? 'உங்கள் சுயவிவரம் வெற்றிகரமாக சேமிக்கப்பட்டது! நேரடி வானிலை புதுப்பிக்கப்பட்டது.' : 'Farmer profile updated! Open-Meteo live telemetry refreshed.');
+    alert(isTa ? 'உங்கள் சுயவிவரம் வெற்றிகரமாக சேமிக்கப்பட்டது! நேரடி வானிலை புதுப்பிக்கப்பட்டது.' : 'Farmer profile updated and saved! Open-Meteo live telemetry refreshed.');
     switchView('dashboard');
   });
 }
@@ -2644,6 +2694,17 @@ function setAsCurrentCrop(cropName) {
   currentProfile.currentCrop = cropName;
   currentProfile.cropStage = 'Vegetative (15 Days)';
   localStorage.setItem('agri_craft_profile', JSON.stringify(currentProfile));
+
+  // Asynchronously register crop in backend crops table
+  if (window.AgriApiService) {
+    window.AgriApiService.createCrop({
+      farmer_id: currentProfile.id || 1,
+      crop_name: cropName,
+      season: 'Kharif',
+      area: currentProfile.farmSize || 2.5
+    }).catch(err => console.debug('Backend crop registration note:', err.message));
+  }
+
   runInitialAssessments();
   closeAppModal();
   renderApp();
