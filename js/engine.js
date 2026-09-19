@@ -116,90 +116,192 @@ const AgriEngine = {
 
   /**
    * Multi-Factor Crop Risk Engine
-   * Factors: Crop Stage + Weather + Soil Moisture + Irrigation + Disease Status
+   * 4 Factors: Crop Growth Stage (20%) + Weather Forecast (30%) + Irrigation Supply (25%) + Soil & Field Condition (25%)
+   * Score range: 0–100 | 0–29 LOW | 30–54 MODERATE | 55–100 HIGH
    */
   calculateCropRisk(params) {
-    const { cropStage = 'Vegetative', weather = 'Normal', soil = 'Alluvial', irrigation = 'drip', disease = 'None' } = params;
+    const {
+      cropStage  = 'Vegetative',
+      weather    = 'Normal',
+      irrigation = 'drip',
+      soilField  = 'Good'
+    } = params;
 
-    let riskPoints = 15; // baseline
-    let riskFactors = [];
-    let actions = [];
+    // ---------- Factor 1: Crop Growth Stage (max contribution = 20 pts) ----------
+    let stageScore = 0;
+    let stageFactor = {};
+    let stageActions = [];
 
-    // Weather impact
-    if (weather === 'Heavy Rain' || weather === 'Unseasonal Rain') {
-      riskPoints += 30;
-      riskFactors.push({
-        title: 'Excessive Rainfall & Inundation Risk',
-        impact: 'Risk of root rot, lodging, and anaerobic soil conditions in low-lying fields.'
-      });
-      actions.push('Provide drainage channels immediately to prevent water logging around root zones.');
-    } else if (weather === 'Heatwave' || weather === 'Dry Spell') {
-      riskPoints += 25;
-      riskFactors.push({
-        title: 'Moisture Stress & Heat Scorching',
-        impact: 'Rapid evapotranspiration depleting root zone moisture.'
-      });
-      actions.push('Apply light, frequent evening irrigation or pulse drip cycles.');
-    } else {
-      riskFactors.push({
-        title: 'Weather Conditions Favorable',
-        impact: 'Temperature and sunshine hours are within optimal physiological thresholds.'
-      });
+    switch (cropStage) {
+      case 'Flowering':
+      case 'Panicle / Pegging':
+        stageScore = 20; // highest vulnerability
+        stageFactor = {
+          title: 'Critical Reproductive Stage (Flowering / Panicle)',
+          impact: 'Crop is in its most stress-sensitive phase — any water deficit or nutrient shock causes irreversible yield loss.',
+          weight: '20%'
+        };
+        stageActions.push('Avoid water stress; maintain consistent soil moisture. Delay all heavy fertilizer top-dressing until post-flowering.');
+        break;
+      case 'Maturity / Pre-Harvest':
+        stageScore = 10;
+        stageFactor = {
+          title: 'Pre-Harvest / Maturity Phase',
+          impact: 'Rain or excess moisture now can cause lodging, grain discolouration, and post-harvest quality loss.',
+          weight: '20%'
+        };
+        stageActions.push('Withhold irrigation 10–12 days before scheduled harvest. Clear field drainage exits.');
+        break;
+      case 'Vegetative':
+      default:
+        stageScore = 5;
+        stageFactor = {
+          title: 'Vegetative Growth Stage — Low Vulnerability',
+          impact: 'Crop is building leaf area; moderate resilience to short weather fluctuations.',
+          weight: '20%'
+        };
+        stageActions.push('Maintain routine canopy monitoring and scheduled irrigation cycles.');
+        break;
     }
 
-    // Crop Stage vulnerability
-    if (cropStage === 'Flowering' || cropStage === 'Panicle / Pegging') {
-      riskPoints += 15;
-      riskFactors.push({
-        title: 'Critical Reproductive Stage',
-        impact: 'Crop is in its most sensitive water and nutrient uptake phase.'
-      });
-      actions.push('Avoid water stress or sudden heavy fertilizer application during flower drop/pegging.');
-    } else if (cropStage === 'Maturity / Pre-Harvest') {
-      riskFactors.push({
-        title: 'Pre-Harvest Phase',
-        impact: 'Requires dry weather for uniform ripening.'
-      });
-      actions.push('Withhold irrigation 10-12 days prior to scheduled cutting.');
+    // ---------- Factor 2: Weather Condition Forecast (max contribution = 30 pts) ----------
+    let weatherScore = 0;
+    let weatherFactor = {};
+    let weatherActions = [];
+
+    switch (weather) {
+      case 'Heavy Rain':
+      case 'Unseasonal Rain':
+        weatherScore = 30;
+        weatherFactor = {
+          title: 'Heavy Rain / Cyclone Warning — Inundation Risk',
+          impact: 'High precipitation risks root rot, lodging, soil nutrient leaching, and anaerobic root-zone conditions.',
+          weight: '30%'
+        };
+        weatherActions.push('Open all bund drainage exits immediately. Avoid any chemical or fertilizer spray until rainfall subsides.');
+        break;
+      case 'Heatwave':
+      case 'Dry Spell':
+        weatherScore = 25;
+        weatherFactor = {
+          title: 'Heatwave / Dry Spell — Heat & Moisture Stress',
+          impact: 'Rapid evapotranspiration depletes root-zone moisture; temperatures above 38°C cause flower/fruit drop.',
+          weight: '30%'
+        };
+        weatherActions.push('Schedule light, frequent evening drip cycles. Apply mulch to conserve soil moisture.');
+        break;
+      default: // Normal / Favorable
+        weatherScore = 5;
+        weatherFactor = {
+          title: 'Weather Forecast Favorable',
+          impact: 'Temperature and sunshine hours are within optimal physiological thresholds — minimal weather-driven stress.',
+          weight: '30%'
+        };
+        weatherActions.push('Continue routine field scouting. No immediate weather-driven intervention required.');
+        break;
     }
 
-    // Irrigation factor
-    if (irrigation === 'rainfed') {
-      riskPoints += 20;
-      riskFactors.push({
-        title: 'Rainfed Dependency',
-        impact: 'Vulnerable to erratic precipitation gaps.'
-      });
-      actions.push('Conserve moisture through organic mulching or cover crops.');
+    // ---------- Factor 3: Irrigation Supply (max contribution = 25 pts) ----------
+    let irrigScore = 0;
+    let irrigFactor = {};
+    let irrigActions = [];
+
+    switch (irrigation) {
+      case 'rainfed':
+        irrigScore = 25;
+        irrigFactor = {
+          title: 'Rainfed / Drought-Prone — High Water Risk',
+          impact: 'No assured irrigation source; crop fully dependent on erratic monsoon precipitation gaps.',
+          weight: '25%'
+        };
+        irrigActions.push('Apply organic mulch to conserve soil moisture. Explore community bore/open-well tapping or micro-watershed harvesting.');
+        break;
+      case 'flood':
+        irrigScore = 12;
+        irrigFactor = {
+          title: 'Flood / Channel Irrigation — Moderate Efficiency',
+          impact: 'High water application volumes can cause nutrient run-off and waterlogging in low-gradient fields.',
+          weight: '25%'
+        };
+        irrigActions.push('Monitor field drainage. Consider converting to raised-bed or alternate-furrow irrigation to reduce water waste.');
+        break;
+      default: // drip / controlled
+        irrigScore = 3;
+        irrigFactor = {
+          title: 'Drip / Controlled Irrigation — Optimal Water Use',
+          impact: 'Precise water delivery at root zone minimises stress, reduces evaporation loss, and supports fertigation.',
+          weight: '25%'
+        };
+        irrigActions.push('Maintain drip emitter flow-rate checks. Schedule fertigation alongside irrigation cycles for maximum uptake.');
+        break;
     }
 
-    // Disease factor
-    if (disease && disease !== 'None' && disease !== 'healthy_leaf') {
-      riskPoints += 30;
-      riskFactors.push({
-        title: 'Active Pathogen / Pest Presence',
-        impact: 'Spore count or pest population threatens leaf surface area and photosynthesis.'
-      });
-      actions.push('Apply recommended bio-fungicide or targeted low-toxicity chemical formulation.');
+    // ---------- Factor 4: Soil & Field Condition (max contribution = 25 pts) ----------
+    let soilScore = 0;
+    let soilFactor = {};
+    let soilActions = [];
+
+    switch (soilField) {
+      case 'Waterlogged':
+        soilScore = 25;
+        soilFactor = {
+          title: 'Waterlogged / Anaerobic Soil Condition',
+          impact: 'Excess standing water cuts off soil oxygen, causing root hypoxia, nitrogen volatilisation, and rapid disease spread.',
+          weight: '25%'
+        };
+        soilActions.push('Open bund outlets and create sub-surface drainage channels. Allow field to drain for 48–72 hours before next irrigation.');
+        break;
+      case 'Compacted / Cracked':
+        soilScore = 18;
+        soilFactor = {
+          title: 'Compacted / Cracked Soil — Structural Stress',
+          impact: 'Hard pans limit root penetration; crack formation severs fine root hairs causing moisture and nutrient stress.',
+          weight: '25%'
+        };
+        soilActions.push('Apply sub-surface tillage (chisel ploughing). Add organic matter (FYM/compost) to improve soil porosity and structure.');
+        break;
+      case 'Nutrient Deficient':
+        soilScore = 15;
+        soilFactor = {
+          title: 'Nutrient-Deficient Soil — Yield-Limiting Condition',
+          impact: 'Low NPK availability stunts growth, reduces pest resistance, and causes premature leaf senescence.',
+          weight: '25%'
+        };
+        soilActions.push('Conduct soil test. Apply recommended dose of fertiliser (RDF) or micro-nutrient mixture based on deficiency symptoms.');
+        break;
+      default: // Good / Optimal
+        soilScore = 3;
+        soilFactor = {
+          title: 'Soil & Field Condition — Good / Optimal',
+          impact: 'Adequate soil structure, drainage, and organic matter support healthy root development and nutrient uptake.',
+          weight: '25%'
+        };
+        soilActions.push('Maintain organic matter addition each season. Schedule next soil health card test within 2 years.');
+        break;
     }
 
-    // Determine final tier
+    // ---------- Composite Score (sum of all 4 weighted factor scores) ----------
+    const totalScore = Math.min(100, stageScore + weatherScore + irrigScore + soilScore);
+
+    // Risk tier thresholds
     let level = 'LOW';
     let color = '#2e7d32'; // green
-    if (riskPoints >= 55) {
+    if (totalScore >= 55) {
       level = 'HIGH';
       color = '#d32f2f'; // red
-    } else if (riskPoints >= 30) {
+    } else if (totalScore >= 30) {
       level = 'MODERATE';
       color = '#f57c00'; // orange
     }
 
+    const allActions = [...stageActions, ...weatherActions, ...irrigActions, ...soilActions];
+
     return {
       level,
-      score: Math.min(100, riskPoints),
+      score: totalScore,
       color,
-      factors: riskFactors,
-      immediateActions: actions.length ? actions : ['Continue routine field observation and maintain scheduled moisture.']
+      factors: [stageFactor, weatherFactor, irrigFactor, soilFactor],
+      immediateActions: allActions.length ? allActions : ['Continue routine field observation and maintain scheduled soil moisture.']
     };
   },
 

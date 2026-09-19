@@ -147,15 +147,16 @@ function parseJsonBody(req) {
   });
 }
 
-function wrapResponse(res) {
+function wrapResponse(res, req) {
+  const origin = (req && req.headers && req.headers.origin) ? (req.headers.origin === 'null' ? '*' : req.headers.origin) : '*';
   res.status = function(code) {
     res.statusCode = code;
     return res;
   };
   res.json = function(data) {
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Headers', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.end(JSON.stringify(data));
   };
@@ -167,12 +168,15 @@ const nativeServer = http.createServer(async (req, res) => {
   const pathname = parsed.pathname;
   const method = req.method.toUpperCase();
 
+  const origin = req.headers.origin || '*';
+  const reqHeaders = req.headers['access-control-request-headers'] || '*';
+
   // CORS Preflight
   if (method === 'OPTIONS') {
     res.writeHead(204, {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': origin === 'null' ? '*' : origin,
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Headers': reqHeaders,
       'Access-Control-Max-Age': '86400'
     });
     return res.end();
@@ -182,7 +186,7 @@ const nativeServer = http.createServer(async (req, res) => {
   const timestamp = new Date().toISOString().split('T')[1].slice(0, 8);
   console.log(`[${timestamp}] [NativeHTTP] ${method} ${pathname}`);
 
-  wrapResponse(res);
+  wrapResponse(res, req);
   req.query = parsed.query || {};
   req.params = {};
 

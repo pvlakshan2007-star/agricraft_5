@@ -919,13 +919,13 @@ function renderRiskEngine() {
   container.innerHTML = `
     <div style="margin-bottom: 1.5rem;">
       <h2>🛡️ ${isTa ? 'பயிர் இடர் கணிப்பான் இயந்திரம்' : 'Multi-Factor Crop Risk Engine'}</h2>
-      <p style="color: var(--text-muted);">${isTa ? 'வானிலை, பயிர் பருவம், மண் ஈரப்பதம், பாசனம் மற்றும் நோய் காரணிகளை ஒருங்கிணைத்து இடர் நிலையை கணக்கிடுகிறது.' : 'Synthesizes 5 key agricultural vulnerabilities into a predictive Risk Tier with actionable early warnings.'}</p>
+      <p style="color: var(--text-muted);">${isTa ? 'பயிர் வளர்ச்சி நிலை, வானிலை முன்னறிவிப்பு, பாசன விநியோகம் மற்றும் மண் / வயல் நிலை — இந்த நான்கு காரணிகளை ஒருங்கிணைத்து இடர் நிலையை கணக்கிடுகிறது.' : 'Synthesizes 4 key agricultural factors into a predictive Risk Score (0–100): Crop Growth Stage (20%) · Weather Forecast (30%) · Irrigation Supply (25%) · Soil &amp; Field Condition (25%).'}</p>
     </div>
 
     <div class="form-card">
-      <div class="form-grid-3">
+      <div class="form-grid-2">
         <div class="form-group">
-          <label>${isTa ? 'பயிர் வளர்ச்சி நிலை' : 'Crop Growth Stage'}</label>
+          <label>🌱 ${isTa ? 'பயிர் வளர்ச்சி நிலை' : 'Crop Growth Stage'} <span style="font-size:0.78rem;color:var(--text-muted);">(20%)</span></label>
           <select class="form-control" id="riskStage">
             <option value="Vegetative">Vegetative (இலை வளர்ச்சி நிலை)</option>
             <option value="Flowering" selected>Flowering (பூக்கும் நிலை - உணர்திறன் மிக்கது)</option>
@@ -935,7 +935,7 @@ function renderRiskEngine() {
         </div>
 
         <div class="form-group">
-          <label>${isTa ? 'வானிலை முன்னறிவிப்பு' : 'Weather Condition Forecast'}</label>
+          <label>🌦️ ${isTa ? 'வானிலை முன்னறிவிப்பு' : 'Weather Condition Forecast'} <span style="font-size:0.78rem;color:var(--text-muted);">(30%)</span></label>
           <select class="form-control" id="riskWeather">
             <option value="Normal" selected>Normal / Favorable (வழக்கமான சீதோஷ்ணம்)</option>
             <option value="Heavy Rain">Heavy Rain / Cyclone Warning (கனமழை எச்சரிக்கை)</option>
@@ -944,11 +944,21 @@ function renderRiskEngine() {
         </div>
 
         <div class="form-group">
-          <label>${isTa ? 'பாசன நிலை' : 'Irrigation Supply'}</label>
+          <label>💧 ${isTa ? 'பாசன விநியோகம்' : 'Irrigation Supply'} <span style="font-size:0.78rem;color:var(--text-muted);">(25%)</span></label>
           <select class="form-control" id="riskIrrigation">
             <option value="drip" selected>Drip / Controlled (சொட்டு நீர் பாசனம்)</option>
             <option value="flood">Flood / Channel (வாய்க்கால் பாய்ச்சல்)</option>
             <option value="rainfed">Rainfed / Drought Prone (மானாவாரி)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>🌍 ${isTa ? 'மண் / வயல் நிலை' : 'Soil &amp; Field Condition'} <span style="font-size:0.78rem;color:var(--text-muted);">(25%)</span></label>
+          <select class="form-control" id="riskSoilField">
+            <option value="Good" selected>Good / Optimal (சரியான மண் நிலை)</option>
+            <option value="Nutrient Deficient">Nutrient Deficient (ஊட்டச்சத்து குறைவு)</option>
+            <option value="Compacted / Cracked">Compacted / Cracked (அடர்த்தியான / வெடிப்பு மண்)</option>
+            <option value="Waterlogged">Waterlogged (நீர் தேக்கம்)</option>
           </select>
         </div>
       </div>
@@ -964,16 +974,16 @@ function renderRiskEngine() {
 }
 
 function recalculateRisk() {
-  const stage = document.getElementById('riskStage')?.value || 'Flowering';
-  const weather = document.getElementById('riskWeather')?.value || 'Normal';
+  const stage     = document.getElementById('riskStage')?.value     || 'Flowering';
+  const weather   = document.getElementById('riskWeather')?.value   || 'Normal';
   const irrigation = document.getElementById('riskIrrigation')?.value || 'drip';
+  const soilField = document.getElementById('riskSoilField')?.value  || 'Good';
 
   const risk = AgriEngine.calculateCropRisk({
     cropStage: stage,
     weather,
-    soil: currentProfile.soil,
     irrigation,
-    disease: currentDiseaseScan ? currentDiseaseScan.id : 'None'
+    soilField
   });
 
   currentRiskAssessment = risk;
@@ -1007,8 +1017,11 @@ function recalculateRisk() {
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.75rem;">
         ${risk.factors.map(f => `
           <div style="background: #f8fafc; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
-            <strong style="color: var(--primary-900);">${f.title}</strong>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.35rem;">${f.impact}</p>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+              <strong style="color: var(--primary-900);">${f.title}</strong>
+              ${f.weight ? `<span style="font-size:0.75rem;font-weight:700;color:var(--text-muted);background:#e2e8f0;border-radius:4px;padding:2px 7px;">${f.weight}</span>` : ''}
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">${f.impact}</p>
           </div>
         `).join('')}
       </div>

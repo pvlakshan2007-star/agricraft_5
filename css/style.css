@@ -661,6 +661,13 @@ button {
   margin-bottom: 1.5rem;
 }
 
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;
