@@ -1710,12 +1710,20 @@ function renderSchemes() {
     <div style="margin-bottom: 1.5rem;">
       <h2>🏛️ ${isTa ? 'அரசு மானியங்கள் & வேளாண் திட்டங்கள்' : 'Government Agricultural Schemes Matcher'}</h2>
       <p style="color: var(--text-muted);">${isTa ? 'உங்கள் நில அளவு மற்றும் பயிர் தகவல்களின் அடிப்படையில் நேரடி வங்கி வரவு மற்றும் மானிய திட்டங்கள்.' : 'Profile-matched Central and State government schemes with clear eligibility statuses, subsidies, and required document checklists.'}</p>
-      <a href="https://www.myscheme.gov.in/" target="_blank" rel="noopener noreferrer"
-         class="btn-primary"
-         style="display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 0.75rem; font-size: 0.95rem; text-decoration: none;">
-        🌐 ${isTa ? 'அனைத்து திட்டங்களையும் MyScheme போர்ட்டலில் காண்க' : 'Explore All Schemes on MyScheme.gov.in'}
-        <span style="font-size: 0.8rem; opacity: 0.8;">↗</span>
-      </a>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem;">
+        <a href="https://www.myscheme.gov.in/" target="_blank" rel="noopener noreferrer"
+           class="btn-primary"
+           style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; text-decoration: none;">
+          🌐 ${isTa ? 'MyScheme போர்ட்டல்' : 'MyScheme.gov.in'}
+          <span style="font-size: 0.8rem; opacity: 0.8;">↗</span>
+        </a>
+        <a href="https://www.agricarft.gov.in/" target="_blank" rel="noopener noreferrer"
+           class="btn-secondary"
+           style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; text-decoration: none;">
+          🌾 ${isTa ? 'AgriCARFT போர்ட்டல்' : 'AgriCARFT.gov.in'}
+          <span style="font-size: 0.8rem; opacity: 0.8;">↗</span>
+        </a>
+      </div>
     </div>
 
     <div class="card-deck">
